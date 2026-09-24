@@ -13,20 +13,21 @@
     @if($step === 1)
         <!-- ================= STEP 1: LOOKUP EXISTING RECORD ================= -->
         <div>
-            <form wire:submit.prevent="checkMember" class="mt-6 space-y-5">
+            <form wire:submit="checkMember" class="mt-6 space-y-5">
                 
                 <div class="text-xs text-slate-600 text-center leading-relaxed">
-                    Please enter your <strong>TSC Number</strong> or <strong>ID Number</strong> to begin your registration.
+                    Please enter your <strong>TSC Number</strong> to begin your registration.
                 </div>
 
                 <div>
-                    <input type="text" wire:model="lookup_input" required class="w-full px-4 py-3.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-base bg-white shadow-xs" autofocus>
+                    <input type="text" wire:model="lookup_input" required placeholder="Enter TSC Number" class="w-full px-4 py-3.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-base bg-white shadow-xs" autofocus>
                     @error('lookup_input') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
                 <div>
-                    <button type="submit" class="w-full py-3.5 px-4 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow hover:opacity-95 cursor-pointer" style="background-color: #0E3A59;">
-                        Continue
+                    <button type="submit" wire:loading.attr="disabled" class="w-full py-3.5 px-4 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow hover:opacity-95 cursor-pointer flex items-center justify-center space-x-2" style="background-color: #0E3A59;">
+                        <span wire:loading.remove wire:target="checkMember">Continue</span>
+                        <span wire:loading wire:target="checkMember">Please wait, checking...</span>
                     </button>
                 </div>
 
@@ -41,20 +42,19 @@
     @else
         <!-- ================= STEP 2: FULL REGISTRATION FORM ================= -->
         <div x-data="{ showPassword: false }">
-            <form wire:submit.prevent="register" class="mt-6 space-y-4">
+            <form wire:submit="register" class="mt-6 space-y-4">
                 
                 <div class="text-xs text-slate-600 font-medium text-center pb-2">
                     Please fill out this form to register your account.
                 </div>
 
+                <!-- Salutation & Gender -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Salutation</label>
                         <select wire:model="salutation" class="w-full px-3 py-2 border border-slate-300 rounded text-sm bg-white">
                             <option value="Mr.">Mr.</option>
-                            <option value="Madam">Madam</option>
-                            <option value="Dr.">Dr.</option>
-                            <option value="Prof.">Prof.</option>
+                            <option value="Mrs.">Mrs.</option>
                         </select>
                     </div>
 
@@ -67,6 +67,7 @@
                     </div>
                 </div>
 
+                <!-- First Name & Last Name -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">First Name</label>
@@ -81,10 +82,11 @@
                     </div>
                 </div>
 
+                <!-- TSC Number & ID Number -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">TSC Number</label>
-                        <input type="text" wire:model="tsc_number" required class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="TSC No.">
+                        <input type="text" wire:model="tsc_number" readonly class="w-full px-3 py-2 border border-slate-300 bg-slate-100 rounded text-sm cursor-not-allowed text-slate-600 focus:outline-none">
                         @error('tsc_number') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
 
@@ -95,6 +97,7 @@
                     </div>
                 </div>
 
+                <!-- School Level & School Name -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">School Level</label>
@@ -112,11 +115,17 @@
                     </div>
                 </div>
 
+                <!-- Phone Number & Email -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Phone Number</label>
                         <input type="text" wire:model="phone" required class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="07XXXXXXXX">
-                        @error('phone') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
+                        @error('phone') 
+                            <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
+                            <span class="text-slate-600 text-[10px] mt-1 block bg-slate-50 border border-slate-200 rounded p-1.5 leading-relaxed">
+                                <strong>Accepted Formats:</strong> 07XXXXXXXX · 01XXXXXXXX · 7XXXXXXXX · 1XXXXXXXX · 2547XXXXXXXX · 2541XXXXXXXX
+                            </span>
+                        @enderror
                     </div>
 
                     <div>
@@ -126,6 +135,7 @@
                     </div>
                 </div>
 
+                <!-- Password & Confirm Password -->
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Password</label>
@@ -144,12 +154,14 @@
                     </div>
                 </div>
 
+                <!-- Buttons -->
                 <div class="pt-2 flex space-x-3">
                     <button type="button" wire:click="$set('step', 1)" class="w-1/3 py-3 px-2 border border-slate-300 rounded text-slate-600 font-bold text-xs uppercase tracking-wider hover:bg-slate-50 cursor-pointer">
                         &larr; Back
                     </button>
-                    <button type="submit" class="w-2/3 py-3 px-4 rounded text-white font-bold text-xs uppercase tracking-wider transition shadow bg-red-600 hover:bg-red-700 cursor-pointer">
-                        Register
+                    <button type="submit" wire:loading.attr="disabled" class="w-2/3 py-3 px-4 rounded text-white font-bold text-xs uppercase tracking-wider transition shadow bg-red-600 hover:bg-red-700 cursor-pointer flex items-center justify-center space-x-2">
+                        <span wire:loading.remove wire:target="register">Register</span>
+                        <span wire:loading wire:target="register">Submitting...</span>
                     </button>
                 </div>
 

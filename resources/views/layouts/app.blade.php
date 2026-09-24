@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-    <!-- Dynamic SEO Title -->
-    <title>{{ $title ?? 'ROSSET-SWA | Rongu Sub County Secondary Teachers Social Welfare Association' }}</title>
+   
+    <title>{{ $title ?? 'ROSSET-SWA | Rongo Sub County Secondary Teachers Social Welfare Association' }}</title>
     
     <!-- Core SEO Meta Tags -->
     <meta name="description" content="{{ $metaDescription ?? 'Official platform for the Rongu Sub County Secondary Teachers Social Welfare Association. Empowering secondary educators through mutual welfare support, financial transparency, and educational innovation.' }}">

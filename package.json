@@ -17,6 +17,7 @@
     "dependencies": {
         "alpinejs": "^3.17.4",
         "aos": "^2.3.4",
-        "lucide": "^1.47.0"
+        "lucide": "^1.47.0",
+        "sweetalert2": "^11.26.25"
     }
 }
