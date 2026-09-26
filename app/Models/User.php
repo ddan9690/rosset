@@ -21,12 +21,19 @@ class User extends Authenticatable
         'phone',
         'tsc_number',
         'id_number',
+        'membership_number',
         'school_level',
         'school',
         'email',
         'status',
         'registration_fee_paid',
         'password',
+        'email_otp',
+        'email_otp_expires_at',
+        'email_verified_at',
+        'sms_otp',
+        'sms_otp_expires_at',
+        'sms_verified_at',
     ];
 
     protected $hidden = [
@@ -38,6 +45,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'sms_verified_at' => 'datetime',
+            'email_otp_expires_at' => 'datetime',
+            'sms_otp_expires_at' => 'datetime',
             'registration_fee_paid' => 'boolean',
         ];
     }

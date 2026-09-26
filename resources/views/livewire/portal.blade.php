@@ -18,7 +18,27 @@
             </div>
         @endif
 
-        @if(!$isRegistrationPaid)
+        @if(!$isProfileComplete)
+            <!-- ================= INCOMPLETE PROFILE NOTICE ================= -->
+            <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs text-center max-w-md mx-auto space-y-6 my-16">
+                <div class="w-12 h-12 bg-amber-50 text-amber-600 rounded-full flex items-center justify-center mx-auto">
+                    <i data-lucide="user-pen" class="w-6 h-6"></i>
+                </div>
+                <div class="space-y-2">
+                    <h3 class="text-base font-bold text-slate-900">Profile Update Required</h3>
+                    <p class="text-sm text-slate-700 leading-relaxed font-medium">
+                        Dear <strong class="text-slate-900">{{ Auth::user()->first_name ?? 'Member' }}</strong>, please update your profile in order to access your portal.
+                    </p>
+                </div>
+                <div>
+                    <a href="{{ route('profile.update') }}" wire:navigate class="w-full py-3.5 px-6 rounded-xl text-white font-bold text-xs uppercase tracking-wider transition shadow-sm bg-slate-900 hover:bg-slate-800 cursor-pointer flex items-center justify-center space-x-2">
+                        <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                        <span>Update Profile</span>
+                    </a>
+                </div>
+            </div>
+
+        @elseif(!$isRegistrationPaid)
             <!-- ================= UNPAID REGISTRATION FEE NOTICE (SIMPLIFIED) ================= -->
             <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs text-center max-w-md mx-auto space-y-6 my-16">
                 <div class="space-y-2">

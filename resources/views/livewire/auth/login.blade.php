@@ -30,8 +30,8 @@
         @endif
 
         <div>
-            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">TSC Number or ID Number</label>
-            <input type="text" wire:model="login" required class="w-full px-3 py-2.5 border border-slate-300 rounded focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-sm" placeholder="Enter TSC or ID number">
+            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Phone Number</label>
+            <input type="text" wire:model="login" required class="w-full px-3 py-2.5 border border-slate-300 rounded focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-sm font-mono" placeholder="e.g. 0712345678">
         </div>
 
         <div>

@@ -21,10 +21,17 @@
 
         <!-- Desktop Action Buttons -->
         <div class="hidden md:flex items-center space-x-4">
-            <a href="/login" wire:navigate class="text-sm font-semibold hover:underline" style="color: #0E3A59;">Member Portal</a>
-            <a href="/register" wire:navigate class="text-white text-sm px-5 py-2.5 rounded font-semibold shadow-xs transition-colors hover:opacity-95" style="background-color: #0E3A59;">
-                Join Association
-            </a>
+            @auth
+                <a href="/portal" wire:navigate class="text-white text-sm px-5 py-2.5 rounded font-semibold shadow-xs transition-colors hover:opacity-95 flex items-center space-x-2" style="background-color: #0E3A59;">
+                    <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                    <span>My Portal</span>
+                </a>
+            @else
+                <a href="/login" wire:navigate class="text-sm font-semibold hover:underline" style="color: #0E3A59;">Member Portal</a>
+                <a href="/register" wire:navigate class="text-white text-sm px-5 py-2.5 rounded font-semibold shadow-xs transition-colors hover:opacity-95" style="background-color: #0E3A59;">
+                    Join Association
+                </a>
+            @endauth
         </div>
 
         <!-- Mobile Menu Trigger -->
@@ -45,9 +52,14 @@
         <a href="{{ url('/') }}#safe-haven" @click="mobileMenuOpen = false" class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Welfare Support</a>
         <a href="{{ url('/') }}#gallery" @click="mobileMenuOpen = false" class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Our Community</a>
         <a href="{{ url('/updates') }}" wire:navigate class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Updates</a>
+        
         <div class="pt-4 border-t border-slate-100 flex flex-col space-y-2">
-            <a href="/login" wire:navigate class="text-center w-full py-2.5 border font-semibold text-sm rounded" style="border-color: #0E3A59; color: #0E3A59;">Member Portal</a>
-            <a href="/register" wire:navigate class="text-center w-full py-2.5 text-white rounded font-semibold text-sm shadow-xs" style="background-color: #0E3A59;">Join Association</a>
+            @auth
+                <a href="/portal" wire:navigate class="text-center w-full py-2.5 text-white rounded font-semibold text-sm shadow-xs" style="background-color: #0E3A59;">My Portal</a>
+            @else
+                <a href="/login" wire:navigate class="text-center w-full py-2.5 border font-semibold text-sm rounded" style="border-color: #0E3A59; color: #0E3A59;">Member Portal</a>
+                <a href="/register" wire:navigate class="text-center w-full py-2.5 text-white rounded font-semibold text-sm shadow-xs" style="background-color: #0E3A59;">Join Association</a>
+            @endauth
         </div>
     </div>
 </header>

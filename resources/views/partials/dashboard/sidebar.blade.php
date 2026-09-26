@@ -5,7 +5,7 @@
     
     <!-- Sidebar Brand -->
     <div class="flex items-center justify-between h-16 px-6 border-b border-slate-800">
-        <a href="{{ route('admin.dashboard') }}" class="flex items-center space-x-2 text-white font-extrabold tracking-wider text-xs">
+        <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center space-x-2 text-white font-extrabold tracking-wider text-xs">
             <span class="w-3 h-3 rounded-full" style="background-color: #2EA3F2;"></span>
             <span>ROSSET-SWA ADMIN</span>
         </a>
@@ -16,7 +16,7 @@
 
     <!-- Navigation Links -->
     <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto text-sm font-medium">
-        <a href="{{ route('admin.dashboard') }}" class="flex items-center px-4 py-3 rounded-lg text-white transition {{ request()->routeIs('admin.dashboard') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+        <a href="{{ route('admin.dashboard') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg text-white transition {{ request()->routeIs('admin.dashboard') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
             <i data-lucide="layout-dashboard" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
             Dashboard
         </a>
@@ -26,19 +26,9 @@
             Members Directory
         </a>
 
-        <a href="#" class="flex items-center px-4 py-3 rounded-lg transition hover:bg-white/5 text-slate-300">
-            <i data-lucide="credit-card" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
-            Contributions & Fees
-        </a>
-
-        <a href="#" class="flex items-center px-4 py-3 rounded-lg transition hover:bg-white/5 text-slate-300">
-            <i data-lucide="file-text" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
-            Welfare Claims
-        </a>
-
-        <a href="#" class="flex items-center px-4 py-3 rounded-lg transition hover:bg-white/5 text-slate-300">
-            <i data-lucide="settings" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
-            System Settings
+        <a href="{{ route('admin.members.onboard') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.members.onboard') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+            <i data-lucide="user-plus" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
+            Onboard Members
         </a>
     </nav>
 

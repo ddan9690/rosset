@@ -20,17 +20,22 @@ return new class extends Migration
             $table->enum('gender', ['male', 'female'])->nullable();
 
             $table->string('phone');
-            $table->string('tsc_number')->unique();
-            $table->string('id_number')->unique();
-            $table->string('membership_number')->nullable()->unique();
+            $table->string('tsc_number')->nullable()->unique(); 
+            $table->string('id_number')->nullable()->unique();   
+
+            $table->unsignedBigInteger('membership_number')->nullable()->unique();
 
             $table->string('school_level')->nullable();
             $table->string('school')->nullable();
 
             $table->string('email')->unique()->nullable();
+            $table->string('slug')->unique()->nullable();
 
-            $table->enum('status', ['pending', 'active', 'suspended', 'deregistered'])->default('pending');
+            $table->enum('status', ['pending', 'active', 'defaulted', 'suspended', 'deregistered'])->default('pending');
+
             $table->boolean('registration_fee_paid')->default(false);
+            $table->boolean('is_profile_complete')->default(false);
+            $table->string('profile_picture')->nullable();
 
             $table->string('password');
 
@@ -41,11 +46,13 @@ return new class extends Migration
             $table->string('sms_otp')->nullable();
             $table->timestamp('sms_otp_expires_at')->nullable();
             $table->timestamp('sms_verified_at')->nullable();
+            $table->timestamp('last_login_at')->nullable();
+            $table->timestamp('last_active_at')->nullable();
 
             $table->rememberToken();
             $table->timestamps();
         });
-
+        
         Schema::create('password_reset_tokens', function (Blueprint $table) {
             $table->string('email')->primary();
             $table->string('token');

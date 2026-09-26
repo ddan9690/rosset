@@ -15,6 +15,7 @@ class Portal extends Component
     public $membershipNumber = '';
     public $memberStatus = '';
     public $isRegistrationPaid = false;
+    public $isProfileComplete = false;
 
     public $solidarityBalance = 148500;
 
@@ -58,11 +59,16 @@ class Portal extends Component
         if (Auth::check()) {
             $user = Auth::user();
             $this->memberName = trim(($user->salutation ?? '') . ' ' . $user->first_name . ' ' . $user->last_name);
-            $this->membershipNumber = $user->tsc_number ?? 'N/A';
+            $this->membershipNumber = $user->tsc_number ?? $user->membership_number ?? 'N/A';
             $this->memberStatus = ucfirst($user->status ?? 'Pending');
             
-            // Check if registration fee is paid
             $this->isRegistrationPaid = (bool) ($user->registration_fee_paid ?? false);
+            
+            // Profile is considered complete if mandatory fields (tsc_number, id_number, school) are filled
+            $this->isProfileComplete = !empty($user->tsc_number) 
+                && !empty($user->id_number) 
+                && !empty($user->school) 
+                && !str_starts_with($user->tsc_number, 'TSC-'); // checks if placeholder format was replaced
         }
     }
 

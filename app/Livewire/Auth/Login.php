@@ -27,22 +27,20 @@ class Login extends Component
         $this->reset('errorMessage');
         $this->validate();
 
-        $user = User::where('email', $this->login)
-            ->orWhere('phone', $this->login)
+        // Find user by phone, email, or tsc_number
+        $user = User::where('phone', $this->login)
+            ->orWhere('email', $this->login)
             ->orWhere('tsc_number', $this->login)
             ->first();
 
         if ($user && Hash::check($this->password, $user->password)) {
             Auth::login($user);
 
-            if (!$user->registration_fee_paid || $user->status === 'pending') {
-                return redirect()->route('activation.pending');
-            }
-
-            return redirect()->intended('/dashboard');
+            // Redirect members straight to their portal route
+            return redirect()->route('portal');
         }
 
-        $this->errorMessage = 'Invalid credentials';
+        $this->errorMessage = 'Invalid phone number or password.';
     }
 
     public function render()
