@@ -3,6 +3,8 @@
 namespace App\Livewire;
 
 use App\Models\SolidarityFund;
+use App\Models\BenevolenceCase;
+use App\Models\Transaction;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -17,43 +19,7 @@ class Portal extends Component
     public $memberStatus = '';
     public $isRegistrationPaid = false;
     public $isProfileComplete = false;
-
     public $solidarityBalance = 0;
-
-    public $benevolenceCases = [
-        [
-            'case_number' => 'BEN-2026-001',
-            'member_name' => 'John Ochieng',
-            'membership_number' => 'TSC/128492',
-            'category' => 'Self (Member Bereavement)',
-            'bereaved_person' => 'Self',
-            'amount' => 500,
-            'burial_date' => '2026-10-05',
-            'deadline' => '2026-10-02',
-            'contribution_made' => false,
-        ],
-        [
-            'case_number' => 'BEN-2026-002',
-            'member_name' => 'Mary Akoth',
-            'membership_number' => 'TSC/984211',
-            'category' => 'Spouse Bereavement',
-            'bereaved_person' => 'Spouse',
-            'amount' => 300,
-            'burial_date' => '2026-10-12',
-            'deadline' => '2026-10-09',
-            'contribution_made' => true,
-        ],
-    ];
-
-    public $recentTransactions = [
-        [
-            'case_number' => 'BEN-2026-002',
-            'member_name' => 'Mary Akoth',
-            'membership_number' => 'TSC/984211',
-            'amount_paid' => 300,
-            'date_paid' => '2026-09-15',
-        ],
-    ];
 
     public function mount()
     {
@@ -70,7 +36,6 @@ class Portal extends Component
                 && !empty($user->school) 
                 && !str_starts_with($user->tsc_number, 'TSC-');
 
-            // Fetch live solidarity fund balance from database
             $wallet = SolidarityFund::firstOrCreate(['user_id' => $user->id]);
             $this->solidarityBalance = $wallet->balance;
         }
@@ -81,27 +46,30 @@ class Portal extends Component
         return redirect()->route('register.fee');
     }
 
-    public function sendContribution($caseNumber)
+    public function sendContribution($caseId)
     {
-        foreach ($this->benevolenceCases as &$case) {
-            if ($case['case_number'] === $caseNumber) {
-                $case['contribution_made'] = true;
-                
-                array_unshift($this->recentTransactions, [
-                    'case_number' => $case['case_number'],
-                    'member_name' => $case['member_name'],
-                    'membership_number' => $case['membership_number'],
-                    'amount_paid' => $case['amount'],
-                    'date_paid' => now()->format('Y-m-d'),
-                ]);
-            }
-        }
-        
-        session()->flash('message', 'Contribution successfully processed for case ' . $caseNumber);
+        return redirect()->route('benevolence.contribute', ['id' => $caseId]);
     }
 
     public function render()
     {
-        return view('livewire.portal');
+        $user = Auth::check() ? Auth::user() : null;
+
+        $activeCases = BenevolenceCase::with(['member', 'category'])
+            ->where('status', 'active')
+            ->oldest('created_at')
+            ->get()
+            ->map(function ($case) use ($user) {
+                $case->contribution_made = $user ? Transaction::where('user_id', $user->id)
+                    ->where('case_number', $case->case_number)
+                    ->where('type', 'benevolence_contribution')
+                    ->where('status', 'success')
+                    ->exists() : false;
+                return $case;
+            });
+
+        return view('livewire.portal', [
+            'benevolenceCases' => $activeCases,
+        ]);
     }
 }

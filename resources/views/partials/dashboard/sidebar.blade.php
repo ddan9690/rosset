@@ -37,6 +37,12 @@
             Benevolence Categories
         </a>
 
+        <!-- Benevolence Cases Link -->
+        <a href="{{ route('admin.benevolence.cases.index') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.benevolence.cases*') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+            <i data-lucide="file-text" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
+            Benevolence Cases
+        </a>
+
         <!-- Settings Link -->
         <a href="{{ route('admin.settings') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.settings') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
             <i data-lucide="settings" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>

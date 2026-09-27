@@ -50,12 +50,12 @@
                 <div class="space-y-2">
                     <h3 class="text-base font-bold text-slate-900">Registration Fee Pending</h3>
                     <p class="text-sm text-slate-700 leading-relaxed font-medium">
-                        Dear <strong class="text-slate-900">{{ Auth::user()->first_name ?? 'Member' }}</strong>, please complete your registration by paying registration fee of <strong class="text-slate-900 font-mono">KES 150</strong>.
+                        Dear <strong class="text-slate-900">{{ Auth::user()->first_name ?? 'Member' }}</strong>, please complete your registration by paying registration fee of <strong class="text-slate-900 font-mono">KSH 150</strong>.
                     </p>
                 </div>
                 <div>
                     <button wire:click="redirectToPayment" wire:loading.attr="disabled" class="w-full py-3.5 px-6 rounded-xl text-white font-bold text-xs uppercase tracking-wider transition shadow-sm bg-red-600 hover:bg-red-700 cursor-pointer flex items-center justify-center space-x-2">
-                        <span wire:loading.remove wire:target="redirectToPayment">Pay Registration Fee (KES 150)</span>
+                        <span wire:loading.remove wire:target="redirectToPayment">Pay Registration Fee (KSH 150)</span>
                         <span wire:loading wire:target="redirectToPayment">Redirecting...</span>
                     </button>
                 </div>
@@ -81,7 +81,7 @@
                     <div>
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Solidarity Fund Balance</span>
                         <div class="flex items-center space-x-3 mt-0.5">
-                            <span class="text-lg font-extrabold text-slate-900 font-mono">KES {{ number_format($solidarityBalance) }}</span>
+                            <span class="text-lg font-extrabold text-slate-900 font-mono">KSH {{ number_format($solidarityBalance) }}</span>
                         </div>
                     </div>
                     <div class="flex items-center space-x-3">
@@ -95,59 +95,80 @@
                 </div>
             </div>
 
-            <!-- PENDING CONTRIBUTIONS TABLE -->
+            <!-- BENEVOLENCE CASES SECTION -->
             <div class="space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-3">
-                    <div>
-                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">Pending Contributions (Not Contributed)</h2>
-                        <p class="text-xs text-slate-500">Cases requiring your financial support.</p>
-                    </div>
+                <div class="border-b border-slate-200 pb-3 text-center">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">ROSSET-SWA BENEVOLENCE CASES</h2>
                 </div>
 
-                <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
-                                    <th class="py-3 px-4">Case Number</th>
-                                    <th class="py-3 px-4">Member Name</th>
-                                    <th class="py-3 px-4">Category</th>
-                                    <th class="py-3 px-4">Required Amount</th>
-                                    <th class="py-3 px-4">Deadline</th>
-                                    <th class="py-3 px-4 text-right">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100 text-slate-700">
-                                @forelse(collect($benevolenceCases)->where('contribution_made', false) as $case)
-                                    <tr class="hover:bg-slate-50/50 transition">
-                                        <td class="py-3.5 px-4 font-mono font-bold text-slate-900">{{ $case['case_number'] }}</td>
-                                        <td class="py-3.5 px-4">
-                                            <div class="font-semibold text-slate-900">{{ $case['member_name'] }}</div>
-                                            <div class="font-mono text-[10px] text-slate-500">{{ $case['membership_number'] }}</div>
-                                        </td>
-                                        <td class="py-3.5 px-4">
-                                            <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200">
-                                                {{ $case['category'] }}
-                                            </span>
-                                        </td>
-                                        <td class="py-3.5 px-4 font-mono font-bold text-slate-900">KES {{ number_format($case['amount']) }}</td>
-                                        <td class="py-3.5 px-4 font-mono text-red-600 font-semibold">{{ $case['deadline'] }}</td>
-                                        <td class="py-3.5 px-4 text-right">
-                                            <button wire:click="sendContribution('{{ $case['case_number'] }}')" wire:loading.attr="disabled" class="px-3 py-1.5 rounded-lg text-white font-bold text-xs transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 inline-flex items-center space-x-1">
-                                                <span>Contribute</span>
-                                            </button>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td colspan="6" class="py-8 text-center text-slate-400">
-                                            You have successfully contributed to all pending cases!
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    @forelse($benevolenceCases as $case)
+                        <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col justify-between transition hover:shadow-md">
+                            
+                            <!-- Case Number Banner Header -->
+                            <div class="bg-slate-900 text-white px-4 py-2.5 text-center">
+                                <span class="font-mono text-xs font-bold text-slate-100 tracking-wide uppercase">CASE NUMBER : {{ $case->case_number }}</span>
+                            </div>
+
+                            <!-- Card Body with Labels -->
+                            <div class="p-5 space-y-3 text-xs flex-1">
+                                <div class="flex justify-between items-start border-b border-slate-100 pb-2.5">
+                                    <span class="text-slate-500 font-medium">Affected Member:</span>
+                                    <span class="font-bold text-slate-900 text-right">
+                                        {{ trim(($case->member->salutation ?? '') . ' ' . ($case->member->first_name ?? '') . ' ' . ($case->member->last_name ?? '')) }}
+                                    </span>
+                                </div>
+
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                    <span class="text-slate-500 font-medium">Membership Number:</span>
+                                    <span class="font-mono font-semibold text-slate-800">{{ $case->member->tsc_number ?? $case->member->membership_number ?? 'N/A' }}</span>
+                                </div>
+
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                    <span class="text-slate-500 font-medium">Benevolence Category:</span>
+                                    <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 uppercase">
+                                        {{ $case->category->name ?? 'Benevolence' }}
+                                    </span>
+                                </div>
+
+                                <div class="space-y-1 border-b border-slate-100 pb-2.5">
+                                    <span class="text-slate-500 font-medium block">Case Details:</span>
+                                    <p class="text-slate-700 italic bg-slate-50 p-2 rounded text-[11px] leading-relaxed">"{{ $case->case_details }}"</p>
+                                </div>
+
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                    <span class="text-slate-500 font-medium">Deadline:</span>
+                                    <span class="font-mono font-semibold text-red-600">
+                                        {{ $case->deadline ? \Carbon\Carbon::parse($case->deadline)->format('d-M-Y') : 'N/A' }}
+                                    </span>
+                                </div>
+
+                                <div class="flex justify-between items-center pt-1">
+                                    <span class="text-slate-500 font-medium">Contribution Amount:</span>
+                                    <span class="font-mono font-bold text-slate-900">KSH {{ number_format($case->category->amount ?? 0) }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Send Contribution Action Footer -->
+                            <div class="p-4 bg-slate-50 border-t border-slate-100">
+                                @if($case->contribution_made)
+                                    <button disabled class="w-full py-2.5 px-4 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 cursor-not-allowed">
+                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                        <span>Contributed</span>
+                                    </button>
+                                @else
+                                    <button wire:click="sendContribution({{ $case->id }})" wire:loading.attr="disabled" class="w-full py-2.5 px-4 rounded-lg text-white font-bold text-xs transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1.5 uppercase tracking-wider">
+                                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                        <span>Send Contribution</span>
+                                    </button>
+                                @endif
+                            </div>
+                        </div>
+                    @empty
+                        <div class="col-span-full py-12 text-center bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
+                            There are currently no active benevolence cases requiring contributions.
+                        </div>
+                    @endforelse
                 </div>
             </div>
 
