@@ -40,11 +40,20 @@ class Register extends Component
 
         $user = User::where('tsc_number', $this->lookup_input)->first();
 
-        if ($user) {
-            Auth::login($user);
-            return redirect()->route('portal');
+        // If TSC number is found AND registration fee is paid, take them to the login page
+        if ($user && $user->registration_fee_paid) {
+            session()->flash('info', 'Your account is already registered and active. Please log in.');
+            return redirect()->route('login');
         }
 
+        // If found but registration fee is NOT paid yet, log them in and take them to fee payment
+        if ($user && !$user->registration_fee_paid) {
+            Auth::login($user);
+            session()->flash('info', 'Please complete your registration fee payment.');
+            return redirect()->route('register.fee');
+        }
+
+        // If NOT found at all, proceed to Step 2 (Full Registration Form)
         $this->tsc_number = $this->lookup_input;
         $this->step = 2;
     }
@@ -81,14 +90,15 @@ class Register extends Component
                 'email' => $this->email,
                 'status' => 'pending',
                 'registration_fee_paid' => false,
+                'is_profile_complete' => false,
                 'password' => Hash::make($this->password),
             ]);
 
             Auth::login($user);
 
-            return redirect()->route('portal');
+            // Redirect to registration fee payment page
+            return redirect()->route('register.fee');
         } catch (\Exception $e) {
-            // Adds the database error to validation bag so it stays on Step 2 and displays the issue
             $this->addError('email', 'Registration failed: ' . $e->getMessage());
         }
     }

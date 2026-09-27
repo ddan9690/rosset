@@ -10,6 +10,13 @@
         </h2>
     </div>
 
+    <!-- Flash Messages (if any) -->
+    @if (session()->has('info'))
+        <div class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg text-xs font-medium text-center">
+            {{ session('info') }}
+        </div>
+    @endif
+
     @if($step === 1)
         <!-- ================= STEP 1: LOOKUP EXISTING RECORD ================= -->
         <div>
@@ -40,7 +47,7 @@
             </form>
         </div>
     @else
-        <!-- ================= STEP 2: FULL REGISTRATION FORM ================= -->
+        <!-- ================= STEP 2: FULL REGISTRATION FORM (No Profile Picture) ================= -->
         <div x-data="{ showPassword: false }">
             <form wire:submit="register" class="mt-6 space-y-4">
                 

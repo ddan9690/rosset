@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     
-   
+    
     <title>{{ $title ?? 'ROSSET-SWA | Rongo Sub County Secondary Teachers Social Welfare Association' }}</title>
     
     <!-- Core SEO Meta Tags -->
@@ -19,7 +19,7 @@
     <!-- Open Graph / Facebook Meta Tags -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="{{ url()->current() }}">
-    <meta property="og:title" content="{{ $title ?? 'ROSSET-SWA | Rongu Sub County Secondary Teachers Social Welfare Association' }}">
+    <meta property="og:title" content="{{ $title ?? 'Rongu Sub County Secondary Teachers Social Welfare Association' }}">
     <meta property="og:description" content="{{ $metaDescription ?? 'Empowering secondary educators in Rongu Sub County through secure welfare frameworks, mutual support, and progressive educational innovation.' }}">
     <meta property="og:image" content="{{ $metaImage ?? asset('images/Group portrait of Rosset Welfare team members.jpg') }}">
     <meta property="og:site_name" content="ROSSET-SWA">
@@ -28,7 +28,7 @@
     <!-- Twitter Card Meta Tags -->
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:url" content="{{ url()->current() }}">
-    <meta name="twitter:title" content="{{ $title ?? 'ROSSET-SWA | Rongu Sub County Secondary Teachers Social Welfare Association' }}">
+    <meta name="twitter:title" content="{{ $title ?? 'Rongu Sub County Secondary Teachers Social Welfare Association' }}">
     <meta name="twitter:description" content="{{ $metaDescription ?? 'Empowering secondary educators in Rongu Sub County through secure welfare frameworks, mutual support, and progressive educational innovation.' }}">
     <meta name="twitter:image" content="{{ $metaImage ?? asset('images/Group portrait of Rosset Welfare team members.jpg') }}">
 
@@ -39,6 +39,9 @@
     <link rel="manifest" href="{{ asset('images/favicon/site.webmanifest') }}">
     <link rel="shortcut icon" href="{{ asset('images/favicon/favicon.ico') }}">
     
+    <!-- SweetAlert2 CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <!-- Vite CSS & JS -->
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>

@@ -30,6 +30,18 @@
             <i data-lucide="user-plus" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
             Onboard Members
         </a>
+
+        <!-- Benevolence Categories Link -->
+        <a href="{{ route('admin.benevolence.categories') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.benevolence.categories') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+            <i data-lucide="folder-kanban" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
+            Benevolence Categories
+        </a>
+
+        <!-- Settings Link -->
+        <a href="{{ route('admin.settings') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.settings') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+            <i data-lucide="settings" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
+            Settings
+        </a>
     </nav>
 
     <!-- Sidebar Footer / Portal Switch -->

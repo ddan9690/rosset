@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\SolidarityFund;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -17,7 +18,7 @@ class Portal extends Component
     public $isRegistrationPaid = false;
     public $isProfileComplete = false;
 
-    public $solidarityBalance = 148500;
+    public $solidarityBalance = 0;
 
     public $benevolenceCases = [
         [
@@ -64,27 +65,20 @@ class Portal extends Component
             
             $this->isRegistrationPaid = (bool) ($user->registration_fee_paid ?? false);
             
-            // Profile is considered complete if mandatory fields (tsc_number, id_number, school) are filled
             $this->isProfileComplete = !empty($user->tsc_number) 
                 && !empty($user->id_number) 
                 && !empty($user->school) 
-                && !str_starts_with($user->tsc_number, 'TSC-'); // checks if placeholder format was replaced
+                && !str_starts_with($user->tsc_number, 'TSC-');
+
+            // Fetch live solidarity fund balance from database
+            $wallet = SolidarityFund::firstOrCreate(['user_id' => $user->id]);
+            $this->solidarityBalance = $wallet->balance;
         }
     }
 
-    public function payRegistrationFee()
+    public function redirectToPayment()
     {
-        $user = Auth::user();
-        if ($user) {
-            $user->update([
-                'registration_fee_paid' => true,
-                'status' => 'active'
-            ]);
-            $this->isRegistrationPaid = true;
-            $this->memberStatus = 'Active';
-        }
-
-        session()->flash('message', 'Registration fee of KES 200 successfully received. Welcome to the full portal!');
+        return redirect()->route('register.fee');
     }
 
     public function sendContribution($caseNumber)
