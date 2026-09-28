@@ -49,6 +49,7 @@ class Register extends Component
         // If found but registration fee is NOT paid yet, log them in and take them to fee payment
         if ($user && !$user->registration_fee_paid) {
             Auth::login($user);
+            $user->update(['last_login_at' => now()]);
             session()->flash('info', 'Please complete your registration fee payment.');
             return redirect()->route('register.fee');
         }
@@ -92,6 +93,7 @@ class Register extends Component
                 'registration_fee_paid' => false,
                 'is_profile_complete' => false,
                 'password' => Hash::make($this->password),
+                'last_login_at' => now(),
             ]);
 
             Auth::login($user);

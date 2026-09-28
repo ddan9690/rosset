@@ -36,6 +36,9 @@ class Login extends Component
         if ($user && Hash::check($this->password, $user->password)) {
             Auth::login($user);
 
+            // Stamp last login time
+            $user->update(['last_login_at' => now()]);
+
             // Redirect members straight to their portal route
             return redirect()->route('portal');
         }

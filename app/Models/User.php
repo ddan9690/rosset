@@ -34,6 +34,8 @@ class User extends Authenticatable
         'sms_otp',
         'sms_otp_expires_at',
         'sms_verified_at',
+        'last_login_at',
+        'last_active_at',
     ];
 
     protected $hidden = [
@@ -48,6 +50,8 @@ class User extends Authenticatable
             'sms_verified_at' => 'datetime',
             'email_otp_expires_at' => 'datetime',
             'sms_otp_expires_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'last_active_at' => 'datetime',
             'registration_fee_paid' => 'boolean',
         ];
     }

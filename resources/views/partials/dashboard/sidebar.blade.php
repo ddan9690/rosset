@@ -21,7 +21,7 @@
             Dashboard
         </a>
 
-        <a href="#" class="flex items-center px-4 py-3 rounded-lg transition hover:bg-white/5 text-slate-300">
+        <a href="{{ route('admin.members') }}" wire:navigate class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.members') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
             <i data-lucide="users" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
             Members Directory
         </a>

@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\KcbWebhookController;
+use App\Http\Middleware\UpdateUserLastActive;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\Members;
 use App\Livewire\Admin\BenevolenceCategories;
 use App\Livewire\Admin\BenevolenceCases\Index;
 use App\Livewire\Admin\BenevolenceCases\Create;
@@ -41,23 +43,27 @@ Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
     ])
     ->name('kcb.ipn');
 
-Route::get('/register/fee', RegistrationFee::class)->name('register.fee');
-Route::get('/portal', Portal::class)->name('portal');
-Route::get('/portal/solidarity', SolidarityFund::class)->name('member.solidarity');
-Route::get('/member/profile', MemberProfile::class)->name('profile.update');
+// Authenticated Routes with Activity Tracking Middleware
+Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
+    Route::get('/register/fee', RegistrationFee::class)->name('register.fee');
+    Route::get('/portal', Portal::class)->name('portal');
+    Route::get('/portal/solidarity', SolidarityFund::class)->name('member.solidarity');
+    Route::get('/member/profile', MemberProfile::class)->name('profile.update');
 
-// Benevolence Contribution Route using case ID
-Route::get('/portal/benevolence/contribute/{id}', BenevolenceContribution::class)->name('benevolence.contribute');
+    // Benevolence Contribution Route using case ID
+    Route::get('/portal/benevolence/contribute/{id}', BenevolenceContribution::class)->name('benevolence.contribute');
 
-// Admin Routes
-Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
-Route::get('/admin/benevolence/categories', BenevolenceCategories::class)->name('admin.benevolence.categories');
+    // Admin Routes
+    Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
+    Route::get('/admin/members', Members::class)->name('admin.members');
+    Route::get('/admin/benevolence/categories', BenevolenceCategories::class)->name('admin.benevolence.categories');
 
-// Benevolence Cases Management Routes
-Route::get('/admin/benevolence/cases', Index::class)->name('admin.benevolence.cases.index');
-Route::get('/admin/benevolence/cases/create', Create::class)->name('admin.benevolence.cases.create');
-Route::get('/admin/benevolence/cases/{id}/{slug}/edit', Edit::class)->name('admin.benevolence.cases.edit');
-Route::get('/admin/benevolence/cases/{id}/{slug}', Show::class)->name('admin.benevolence.cases.show');
+    // Benevolence Cases Management Routes
+    Route::get('/admin/benevolence/cases', Index::class)->name('admin.benevolence.cases.index');
+    Route::get('/admin/benevolence/cases/create', Create::class)->name('admin.benevolence.cases.create');
+    Route::get('/admin/benevolence/cases/{id}/{slug}/edit', Edit::class)->name('admin.benevolence.cases.edit');
+    Route::get('/admin/benevolence/cases/{id}/{slug}', Show::class)->name('admin.benevolence.cases.show');
 
-Route::get('/admin/members/onboard', MemberOnboard::class)->name('admin.members.onboard');
-Route::get('/admin/settings', Settings::class)->name('admin.settings');
+    Route::get('/admin/members/onboard', MemberOnboard::class)->name('admin.members.onboard');
+    Route::get('/admin/settings', Settings::class)->name('admin.settings');
+});
