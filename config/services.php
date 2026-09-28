@@ -36,12 +36,16 @@ return [
     ],
 
     'kcb' => [
-        'base_url' => env('KCB_BASE_URL', 'https://uat.buni.kcbgroup.com'),
-        'token_url' => env('KCB_TOKEN_URL', 'https://accounts.buni.kcbgroup.com/oauth2/token'),
+        'base_url' => env('KCB_BASE_URL'),
+        'token_url' => env('KCB_TOKEN_URL'),
+
         'consumer_key' => env('KCB_CONSUMER_KEY'),
         'consumer_secret' => env('KCB_CONSUMER_SECRET'),
-        'paybill_number' => env('KCB_PAYBILL_NUMBER', '522533'),
-        'account_prefix' => env('KCB_ACCOUNT_PREFIX', '7936435'),
+
+        'account_prefix' => env('KCB_ACCOUNT_PREFIX'),
+        'paybill_number' => env('KCB_PAYBILL_NUMBER'),
+        'pass_key' => env('KCB_PASS_KEY'),
+
         'callback_url' => env('KCB_CALLBACK_URL'),
     ],
 

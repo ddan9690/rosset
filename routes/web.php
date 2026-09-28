@@ -35,7 +35,11 @@ Route::post('/logout', function () {
     return redirect('/');
 })->name('logout');
 
-Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle']);
+Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
+    ->withoutMiddleware([
+        \Illuminate\Foundation\Http\Middleware\ValidateCsrfToken::class,
+    ])
+    ->name('kcb.ipn');
 
 Route::get('/register/fee', RegistrationFee::class)->name('register.fee');
 Route::get('/portal', Portal::class)->name('portal');

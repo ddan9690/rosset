@@ -6,6 +6,7 @@ use App\Models\SolidarityFund as SolidarityModel;
 use App\Models\Transaction;
 use App\Services\KcbPaymentService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -30,8 +31,8 @@ class SolidarityFund extends Component
     {
         $user = Auth::user();
         if ($user) {
-            $this->phone = $user->phone;
-            $this->defaultPhone = $user->phone;
+            $this->phone = $user->phone ?? '';
+            $this->defaultPhone = $user->phone ?? '';
         }
     }
 
@@ -52,6 +53,10 @@ class SolidarityFund extends Component
     public function togglePhoneEditable()
     {
         $this->isPhoneEditable = !$this->isPhoneEditable;
+
+        if (!$this->isPhoneEditable) {
+            $this->phone = $this->defaultPhone;
+        }
     }
 
     public function topUpWallet(KcbPaymentService $paymentService)
@@ -65,46 +70,87 @@ class SolidarityFund extends Component
         ]);
 
         $user = Auth::user();
-        $accountIdentifier = config('services.kcb.account_prefix', '7936435');
+        $accountIdentifier = config('services.kcb.account_number', '7936435');
 
         $result = $paymentService->stkPush(
             phone: $this->phone,
             amount: (float) $this->amount,
             accountIdentifier: $accountIdentifier,
-            description: 'Solidarity Wallet Top-up',
+            description: 'Solidarity Wallet Topup',
             userId: $user->id,
             transactionType: 'wallet_topup'
         );
 
         if ($result['success']) {
-            $responseData = $result['data'];
-            $this->activeCheckoutRequestId = $responseData['Body']['stkCallback']['CheckoutRequestID']
-                ?? $responseData['CheckoutRequestID']
-                ?? $responseData['checkoutRequestID']
+            $this->activeCheckoutRequestId =
+                $result['checkout_request_id']
+                ?? data_get($result, 'response.response.CheckoutRequestID')
+                ?? data_get($result, 'response.CheckoutRequestID')
                 ?? null;
+
+            if (!$this->activeCheckoutRequestId) {
+                Log::error('Wallet Top-up STK Accepted But Checkout ID Missing', [
+                    'result' => $result,
+                ]);
+
+                $this->dispatch('stk-error', message: 'KCB accepted the request, but the checkout reference could not be read.');
+                return;
+            }
 
             $this->showTopUpModal = false;
             $this->stkSent = true;
-            $this->dispatch('stk-sent');
+
+            $this->dispatch('stk-sent', [
+                'phone' => $this->phone,
+                'amount' => $this->amount,
+            ]);
         } else {
-            $this->dispatch('stk-error');
+            $this->dispatch('stk-error', [
+                'message' => $result['message'] ?? 'Unable to initiate wallet top-up.',
+            ]);
         }
     }
 
     public function checkPaymentStatus()
     {
-        if (!$this->activeCheckoutRequestId) {
+        if (!Auth::check() || !$this->activeCheckoutRequestId) {
             return;
         }
 
-        $transaction = Transaction::where('checkout_request_id', $this->activeCheckoutRequestId)
+        $successfulTransaction = Transaction::query()
+            ->where('user_id', Auth::id())
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
+            ->where('type', 'wallet_topup')
             ->where('status', 'success')
             ->first();
 
-        if ($transaction) {
+        if ($successfulTransaction) {
+            Log::info('Wallet Topup Confirmed By Polling', [
+                'user_id' => Auth::id(),
+                'transaction_id' => $successfulTransaction->id,
+                'reference' => $successfulTransaction->reference_number,
+                'amount' => $successfulTransaction->amount,
+            ]);
+
             $this->stkSent = false;
             $this->activeCheckoutRequestId = null;
+
             $this->dispatch('payment-successful');
+            return;
+        }
+
+        // Check if failed
+        $failedTransaction = Transaction::query()
+            ->where('user_id', Auth::id())
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
+            ->where('type', 'wallet_topup')
+            ->where('status', 'failed')
+            ->first();
+
+        if ($failedTransaction) {
+            $this->stkSent = false;
+            $this->activeCheckoutRequestId = null;
+            $this->dispatch('stk-error', ['message' => 'Payment failed or was cancelled.']);
         }
     }
 
