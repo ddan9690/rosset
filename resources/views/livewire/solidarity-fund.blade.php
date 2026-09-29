@@ -108,7 +108,7 @@
                     
                     <div class="flex items-center justify-between border-b border-slate-200 pb-4">
                         <h3 class="font-bold text-sm uppercase tracking-wider text-slate-900">Top-up Solidarity Wallet</h3>
-                        <button wire:click="closeModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+                        <button type="button" wire:click="closeModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
                     </div>
 
                     <form wire:submit="topUpWallet" class="space-y-4">

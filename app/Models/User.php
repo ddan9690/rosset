@@ -28,6 +28,7 @@ class User extends Authenticatable
         'status',
         'registration_fee_paid',
         'password',
+        'profile_picture',
         'email_otp',
         'email_otp_expires_at',
         'email_verified_at',

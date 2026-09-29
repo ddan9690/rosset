@@ -1,12 +1,11 @@
-<div class="space-y-6 max-w-3xl mx-auto">
+<div class="space-y-6 max-w-5xl mx-auto pb-12">
     <!-- Header Section -->
-    <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-xs">
+    <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-xs gap-4">
         <div>
-            <h3 class="font-bold text-sm uppercase tracking-wider" style="color: #0E3A59;">Case Details: {{ $case->case_number }}</h3>
-            <p class="text-xs text-slate-500 mt-0.5">Affected Member: <span class="font-bold text-slate-700">{{ $case->member->first_name ?? '' }} {{ $case->member->last_name ?? '' }}</span> | TSC: <span class="font-mono text-slate-700">{{ $case->member->tsc_number ?? 'N/A' }}</span> | Phone: <span class="font-mono text-slate-700">{{ $case->member->phone ?? 'N/A' }}</span> | Category: <span class="font-bold text-slate-700">{{ $case->category->name ?? 'N/A' }}</span></p>
+            <h3 class="font-bold text-sm uppercase tracking-wider text-slate-900">Case Details: {{ $case->case_number }}</h3>
+            <p class="text-xs text-slate-500 mt-0.5">Affected Member: <span class="font-bold text-slate-700">{{ $case->member->first_name ?? '' }} {{ $case->member->last_name ?? '' }}</span> | TSC: <span class="font-mono text-slate-700">{{ $case->member->tsc_number ?? 'N/A' }}</span> | Category: <span class="font-bold text-slate-700">{{ $case->category->name ?? 'N/A' }}</span></p>
         </div>
         <div class="flex items-center space-x-2 flex-shrink-0">
-            <!-- Status Action Buttons (Trigger Modals) -->
             @if($case->status !== 'active')
                 <button type="button" wire:click="openStatusModal('active')" class="px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-emerald-500 transition cursor-pointer">Make Active</button>
             @endif
@@ -41,7 +40,7 @@
             <div>
                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Category & Standard Amount</p>
                 <p class="font-bold text-slate-900 text-sm mt-1">{{ $case->category->name ?? 'N/A' }}</p>
-                <p class="font-mono font-bold text-emerald-600 mt-0.5">KES {{ number_format($case->category->amount ?? 0) }}</p>
+                <p class="font-mono font-bold text-emerald-600 mt-0.5">KES {{ number_format($case->category->amount ?? 0, 2) }}</p>
             </div>
         </div>
 
@@ -78,6 +77,104 @@
         </div>
     </div>
 
+    <!-- ================= CONTRIBUTION STATISTICS & ANALYTICS ================= -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <span class="text-slate-400 uppercase font-bold text-[10px]">Total Collected</span>
+            <h4 class="text-2xl font-extrabold font-mono text-emerald-600 mt-1">KES {{ number_format($totalAmountCollected, 2) }}</h4>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
+            <span class="text-slate-400 uppercase font-bold text-[10px]">Total Contributors</span>
+            <h4 class="text-2xl font-extrabold font-mono text-slate-900 mt-1">{{ $totalContributorsCount }} / {{ $totalSystemMembers }}</h4>
+        </div>
+        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs md:col-span-2 flex flex-col justify-between">
+            <div class="flex justify-between items-center">
+                <span class="text-slate-400 uppercase font-bold text-[10px]">Participation Rate</span>
+                <span class="font-mono font-bold text-blue-600 text-sm">{{ $contributionPercentage }}%</span>
+            </div>
+            <div class="w-full bg-slate-100 rounded-full h-2.5 mt-3 overflow-hidden">
+                <div class="bg-blue-500 h-2.5 rounded-full" style="width: {{ min(100, $contributionPercentage) }}%"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Demographics Breakdown -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
+        <!-- By Gender -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
+            <h4 class="font-bold uppercase tracking-wider text-slate-800">Contributors by Gender</h4>
+            <div class="space-y-2">
+                @forelse($contributorsByGender as $gender => $count)
+                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                        <span class="font-medium text-slate-700 uppercase">{{ $gender ?: 'Not Specified' }}</span>
+                        <span class="font-mono font-bold text-slate-900">{{ $count }} Members</span>
+                    </div>
+                @empty
+                    <p class="text-slate-400 text-center py-4">No data available.</p>
+                @endforelse
+            </div>
+        </div>
+
+        <!-- By School Level -->
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
+            <h4 class="font-bold uppercase tracking-wider text-slate-800">Contributors by School Level</h4>
+            <div class="space-y-2">
+                @forelse($contributorsBySchoolLevel as $level => $count)
+                    <div class="flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg border border-slate-100">
+                        <span class="font-medium text-slate-700">{{ $level ?: 'Not Specified' }}</span>
+                        <span class="font-mono font-bold text-slate-900">{{ $count }} Members</span>
+                    </div>
+                @empty
+                    <p class="text-slate-400 text-center py-4">No data available.</p>
+                @endforelse
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= FINANCIAL CONTRIBUTIONS TABLE ================= -->
+    <div class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
+        <div class="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+            <h3 class="font-bold text-sm uppercase tracking-wider text-slate-800">Financial Contributions List</h3>
+            <span class="text-xs font-mono text-slate-500 font-bold">{{ $contributions->count() }} Records</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                    <tr class="bg-slate-50/70 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
+                        <th class="py-3 px-4">Member Name</th>
+                        <th class="py-3 px-4">Membership No</th>
+                        <th class="py-3 px-4">Date & Time</th>
+                        <th class="py-3 px-4">Transaction Ref</th>
+                        <th class="py-3 px-4">Phone Number</th>
+                        <th class="py-3 px-4">Amount</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    @forelse($contributions as $tx)
+                        <tr class="hover:bg-slate-50 transition">
+                            <td class="py-3 px-4 font-bold text-slate-900">
+                                {{ $tx->user->first_name ?? '' }} {{ $tx->user->last_name ?? '' }}
+                            </td>
+                            <td class="py-3 px-4 font-mono text-slate-600">
+                                {{ $tx->user->membership_number ?? 'N/A' }}
+                            </td>
+                            <td class="py-3 px-4 font-mono text-slate-500">
+                                {{ $tx->paid_at ? $tx->paid_at->format('Y-m-d H:i') : $tx->created_at->format('Y-m-d H:i') }}
+                            </td>
+                            <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ $tx->reference_number }}</td>
+                            <td class="py-3 px-4 font-mono text-slate-600">{{ $tx->phone_number }}</td>
+                            <td class="py-3 px-4 font-mono font-bold text-emerald-600">KES {{ number_format($tx->amount, 2) }}</td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-400">No financial contributions have been recorded for this case yet.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- ================= STATUS MODAL ================= -->
     @if($showStatusModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs">
@@ -110,3 +207,8 @@
         </div>
     @endif
 </div>
+
+<script>
+    document.addEventListener('livewire:navigated', () => { if (window.lucide) lucide.createIcons(); });
+    document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+</script>

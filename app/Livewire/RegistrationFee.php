@@ -3,8 +3,10 @@
 namespace App\Livewire;
 
 use App\Models\Setting;
+use App\Models\Transaction;
 use App\Services\KcbPaymentService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -16,12 +18,13 @@ class RegistrationFee extends Component
     public $phone = '';
     public $stkSent = false;
     public $registrationFeeAmount = 150; // Default fallback
+    public $activeCheckoutRequestId = null;
 
     public function mount()
     {
         $user = Auth::user();
         if ($user) {
-            $this->phone = $user->phone;
+            $this->phone = $user->phone ?? '';
             
             // If the user already paid, redirect straight away
             if ($user->registration_fee_paid) {
@@ -37,16 +40,49 @@ class RegistrationFee extends Component
     }
 
     /**
-     * Polling method called every few seconds by frontend 
+     * Polling method called every 3 seconds by frontend 
      * to check if the payment has been completed via IPN webhook.
      */
     public function checkPaymentStatus()
     {
-        $user = Auth::user()?->fresh();
+        $user = Auth::user();
 
-        if ($user && $user->registration_fee_paid) {
-            // Dispatch event to show SweetAlert and redirect
+        if (!$user || !$this->activeCheckoutRequestId) {
+            return;
+        }
+
+        // Check transactions table for successful payment matching checkout request ID
+        $successfulTransaction = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
+            ->where('type', 'registration_fee')
+            ->where('status', 'success')
+            ->first();
+
+        if ($successfulTransaction || $user->fresh()->registration_fee_paid) {
+            $this->stkSent = false;
+            $this->activeCheckoutRequestId = null;
+
+            // Ensure user flag is set if transaction was captured via IPN
+            if (!$user->registration_fee_paid) {
+                $user->update(['registration_fee_paid' => true]);
+            }
+
             $this->dispatch('payment-successful');
+            return;
+        }
+
+        $failedTransaction = Transaction::query()
+            ->where('user_id', $user->id)
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
+            ->where('type', 'registration_fee')
+            ->where('status', 'failed')
+            ->first();
+
+        if ($failedTransaction) {
+            $this->stkSent = false;
+            $this->activeCheckoutRequestId = null;
+            $this->dispatch('stk-error', ['message' => 'Payment failed or was cancelled.']);
         }
     }
 
@@ -59,33 +95,43 @@ class RegistrationFee extends Component
         ]);
 
         $user = Auth::user();
-
-        // Use clean paybill account identifier for authenticated STK Push
-        $accountIdentifier = config('services.kcb.account_prefix', '7936435');
-
-        // Use dynamically fetched registration fee amount from settings
+        $accountIdentifier = config('services.kcb.account_number', '7936435');
         $amount = (float) $this->registrationFeeAmount; 
 
-        // Trigger KCB STK Push passing authenticated user ID
         $result = $paymentService->stkPush(
             phone: $this->phone,
             amount: $amount, 
             accountIdentifier: $accountIdentifier,
             description: 'ROSSET-SWA Registration Fee',
-            userId: $user->id
+            userId: $user->id,
+            transactionType: 'registration_fee' // Ensure your service handles/passes this type to the transaction creator
         );
 
         if ($result['success']) {
+            $this->activeCheckoutRequestId =
+                $result['checkout_request_id']
+                ?? data_get($result, 'response.response.CheckoutRequestID')
+                ?? data_get($result, 'response.CheckoutRequestID')
+                ?? null;
+
+            if (!$this->activeCheckoutRequestId) {
+                Log::error('Registration Fee STK Accepted But Checkout ID Missing', [
+                    'result' => $result,
+                ]);
+
+                $this->dispatch('stk-error', ['message' => 'KCB accepted the request, but the checkout reference could not be read.']);
+                return;
+            }
+
             $this->stkSent = true;
-            // Dispatch browser event to trigger success SweetAlert
             $this->dispatch('stk-sent', [
                 'phone' => $this->phone
             ]);
-            return;
+        } else {
+            $this->dispatch('stk-error', [
+                'message' => $result['message'] ?? 'Unable to initiate registration fee payment.'
+            ]);
         }
-
-        // Dispatch friendly user-facing error event hiding all technical details
-        $this->dispatch('stk-error');
     }
 
     public function render()

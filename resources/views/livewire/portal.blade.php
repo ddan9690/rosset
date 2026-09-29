@@ -4,13 +4,26 @@
         <!-- Top Navigation Bar -->
         <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-3 shadow-2xs">
 
-            <a
-                href="/"
-                wire:navigate
-                class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1"
-            >
-                <span>&larr; Back to Home</span>
-            </a>
+            <div class="flex items-center space-x-4">
+                <a
+                    href="/"
+                    wire:navigate
+                    class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1"
+                >
+                    <span>&larr; Back to Home</span>
+                </a>
+
+                <span class="text-slate-300">|</span>
+
+                <a
+                    href="{{ route('admin.dashboard') }}"
+                    wire:navigate
+                    class="px-3.5 py-1.5 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-2xs bg-[#0E3A59] hover:opacity-90 flex items-center space-x-1.5 cursor-pointer inline-flex"
+                >
+                    <i data-lucide="layout-dashboard" class="w-3.5 h-3.5"></i>
+                    <span>Switch to Dashboard</span>
+                </a>
+            </div>
 
             <div>
                 <form method="POST" action="{{ route('logout') }}">
@@ -18,7 +31,7 @@
 
                     <button
                         type="submit"
-                        class="text-xs font-bold text-red-600 hover:underline"
+                        class="text-xs font-bold text-red-600 hover:underline cursor-pointer"
                     >
                         Log Out
                     </button>
@@ -380,7 +393,7 @@
 
                                         {{
                                             $case->deadline
-                                                ? \Carbon\Carbon::parse($case->deadline)->format('d-M-Y')
+                                                ? \Carbon\Carbon::parse($case->deadline)->format('d-m-Y')
                                                 : 'N/A'
                                         }}
 
@@ -489,11 +502,20 @@
 
             <div class="space-y-4 pt-4">
 
-                <div class="border-b border-slate-200 pb-3 text-center">
+                <div class="border-b border-slate-200 pb-3 flex items-center justify-between">
 
                     <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">
                         CONTRIBUTION HISTORY
                     </h2>
+
+                    <!-- Download PDF Anchor (Always Visible) -->
+                    <a
+                        href="{{ route('portal.pdf.mycontribtiondowlaod') }}"
+                        class="px-3 py-1.5 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-2xs bg-slate-900 hover:bg-slate-800 flex items-center space-x-1.5 cursor-pointer inline-flex"
+                    >
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Download PDF</span>
+                    </a>
 
                 </div>
 
@@ -511,15 +533,27 @@
                                     <tr>
 
                                         <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Date & Time
-                                        </th>
-
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Transaction Number
+                                            Date
                                         </th>
 
                                         <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
                                             Case Number
+                                        </th>
+
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Affected Member Name
+                                        </th>
+
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Affected Member Number
+                                        </th>
+
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Amount
+                                        </th>
+
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Reference
                                         </th>
 
                                     </tr>
@@ -533,26 +567,13 @@
 
                                         <tr class="hover:bg-slate-50 transition">
 
-                                            <!-- DATE AND TIME -->
+                                            <!-- DATE (COMBINED DATE & TIME, EAT, DASH SEPARATED) -->
 
                                             <td class="px-5 py-4 whitespace-nowrap">
 
                                                 <span class="text-xs font-semibold text-slate-800 font-mono">
 
-                                                    {{ $transaction->paid_at->format('d/m/y g.ia') }}
-
-                                                </span>
-
-                                            </td>
-
-
-                                            <!-- TRANSACTION NUMBER -->
-
-                                            <td class="px-5 py-4 whitespace-nowrap">
-
-                                                <span class="text-xs font-mono font-bold text-slate-700">
-
-                                                    {{ $transaction->reference_number ?? 'N/A' }}
+                                                    {{ $transaction->paid_at->setTimezone('Africa/Nairobi')->format('d-m-Y g:i a') }}
 
                                                 </span>
 
@@ -578,6 +599,70 @@
                                                     </span>
 
                                                 @endif
+
+                                            </td>
+
+
+                                            <!-- AFFECTED MEMBER NAME -->
+
+                                            <td class="px-5 py-4 whitespace-nowrap">
+
+                                                <span class="text-xs font-semibold text-slate-800">
+
+                                                    {{
+                                                        trim(
+                                                            optional($transaction->benevolenceCase?->member)->salutation . ' ' .
+                                                            optional($transaction->benevolenceCase?->member)->first_name . ' ' .
+                                                            optional($transaction->benevolenceCase?->member)->last_name
+                                                        ) ?: 'N/A'
+                                                    }}
+
+                                                </span>
+
+                                            </td>
+
+
+                                            <!-- AFFECTED MEMBER NUMBER -->
+
+                                            <td class="px-5 py-4 whitespace-nowrap">
+
+                                                <span class="text-xs font-mono font-semibold text-slate-700">
+
+                                                    {{
+                                                        optional($transaction->benevolenceCase?->member)->tsc_number
+                                                        ??
+                                                        optional($transaction->benevolenceCase?->member)->membership_number
+                                                        ??
+                                                        'N/A'
+                                                    }}
+
+                                                </span>
+
+                                            </td>
+
+
+                                            <!-- AMOUNT -->
+
+                                            <td class="px-5 py-4 whitespace-nowrap">
+
+                                                <span class="text-xs font-mono font-bold text-slate-900">
+
+                                                    KSH {{ number_format($transaction->amount ?? 0) }}
+
+                                                </span>
+
+                                            </td>
+
+
+                                            <!-- REFERENCE -->
+
+                                            <td class="px-5 py-4 whitespace-nowrap">
+
+                                                <span class="text-xs font-mono font-bold text-slate-700">
+
+                                                    {{ $transaction->reference_number ?? 'N/A' }}
+
+                                                </span>
 
                                             </td>
 

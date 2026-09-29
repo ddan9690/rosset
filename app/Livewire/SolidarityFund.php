@@ -93,7 +93,7 @@ class SolidarityFund extends Component
                     'result' => $result,
                 ]);
 
-                $this->dispatch('stk-error', message: 'KCB accepted the request, but the checkout reference could not be read.');
+                $this->dispatch('stk-error', ['message' => 'KCB accepted the request, but the checkout reference could not be read.']);
                 return;
             }
 
@@ -135,11 +135,13 @@ class SolidarityFund extends Component
             $this->stkSent = false;
             $this->activeCheckoutRequestId = null;
 
+            // Reset pagination to show latest transaction immediately
+            $this->resetPage();
+
             $this->dispatch('payment-successful');
             return;
         }
 
-        // Check if failed
         $failedTransaction = Transaction::query()
             ->where('user_id', Auth::id())
             ->where('checkout_request_id', $this->activeCheckoutRequestId)

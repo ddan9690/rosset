@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin\BenevolenceCases;
 
 use App\Models\BenevolenceCase;
+use App\Models\Transaction;
+use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -68,6 +70,49 @@ class Show extends Component
 
     public function render()
     {
-        return view('livewire.admin.benevolence-cases.show');
+        // Fetch all successful transactions for this case
+        $contributions = Transaction::where('type', 'benevolence_contribution')
+            ->where('case_number', $this->case->case_number)
+            ->where('status', 'success')
+            ->with('user')
+            ->latest('paid_at')
+            ->get();
+
+        // Total unique contributors
+        $contributingUserIds = $contributions->pluck('user_id')->unique();
+        $totalContributorsCount = $contributingUserIds->count();
+
+        // Total members in system for percentage calculation
+        $totalSystemMembers = User::count();
+        $contributionPercentage = $totalSystemMembers > 0 
+            ? round(($totalContributorsCount / $totalSystemMembers) * 100, 2) 
+            : 0;
+
+        // Total funds collected for this case
+        $totalAmountCollected = $contributions->sum('amount');
+
+        // Breakdown by Gender
+        $contributorsByGender = User::whereIn('id', $contributingUserIds)
+            ->selectRaw('gender, count(*) as count')
+            ->groupBy('gender')
+            ->pluck('count', 'gender')
+            ->toArray();
+
+        // Breakdown by School Level
+        $contributorsBySchoolLevel = User::whereIn('id', $contributingUserIds)
+            ->selectRaw('school_level, count(*) as count')
+            ->groupBy('school_level')
+            ->pluck('count', 'school_level')
+            ->toArray();
+
+        return view('livewire.admin.benevolence-cases.show', [
+            'contributions' => $contributions,
+            'totalContributorsCount' => $totalContributorsCount,
+            'totalSystemMembers' => $totalSystemMembers,
+            'contributionPercentage' => $contributionPercentage,
+            'totalAmountCollected' => $totalAmountCollected,
+            'contributorsByGender' => $contributorsByGender,
+            'contributorsBySchoolLevel' => $contributorsBySchoolLevel,
+        ]);
     }
 }

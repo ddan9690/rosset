@@ -90,6 +90,7 @@ class KcbPaymentService
             }
 
             $token = $response->json('access_token');
+            // dd($token);
 
             if (!$token) {
                 Log::error('KCB Token Missing From Response', [
@@ -165,6 +166,7 @@ class KcbPaymentService
                 );
 
             $responseData = $response->json();
+            // dd($response);
 
             Log::info('KCB STK Push Response', [
                 'status' => $response->status(),
@@ -274,6 +276,7 @@ class KcbPaymentService
                 ?? data_get($data, 'body.stkCallback')
                 ?? data_get($data, 'stkCallback')
                 ?? $data;
+                
 
             if (!is_array($stkCallback)) {
                 Log::error('KCB IPN Invalid Callback Structure', [

@@ -10,22 +10,39 @@
             <div>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf
-                    <button type="submit" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Log
-                        Out</button>
+                    <button type="submit" class="text-xs font-bold text-red-600 hover:underline cursor-pointer">Log Out</button>
                 </form>
             </div>
         </div>
 
         @if (session()->has('message'))
-            <div
-                class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
+            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
                 <span>{{ session('message') }}</span>
             </div>
         @endif
 
+        @if($stkSent)
+            <!-- WAITING FOR PAYMENT BANNER -->
+            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm text-center space-y-4 max-w-md mx-auto">
+                <div class="flex justify-center">
+                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                        <i data-lucide="smartphone" class="w-6 h-6 text-blue-600 animate-pulse"></i>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="text-sm font-bold text-blue-900">Waiting for M-Pesa Payment Confirmation</h4>
+                    <p class="text-xs text-blue-800 mt-1">An STK push prompt has been sent to <span class="font-mono font-bold">{{ $phone }}</span>.</p>
+                </div>
+                <div class="flex items-center justify-center gap-2 text-xs text-blue-700 font-medium">
+                    <i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i>
+                    <span>Polling payment status automatically...</span>
+                </div>
+            </div>
+        @endif
+
         <!-- ================= REGISTRATION FEE PAYMENT CARD ================= -->
-        <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs max-w-md mx-auto space-y-6 my-8">
+        <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs max-w-md mx-auto space-y-6">
 
             <div class="w-12 h-12 bg-blue-50 text-[#2EA3F2] rounded-full flex items-center justify-center mx-auto">
                 <i data-lucide="credit-card" class="w-6 h-6"></i>
@@ -58,8 +75,7 @@
 
             <form wire:submit="sendStkPrompt" class="space-y-4">
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">M-Pesa Phone
-                        Number</label>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">M-Pesa Phone Number</label>
                     <input type="text" wire:model="phone" required
                         class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-sm bg-white focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none"
                         placeholder="07XXXXXXXX">
@@ -84,17 +100,23 @@
 
 <script>
     document.addEventListener('livewire:navigated', () => {
-        lucide.createIcons();
+        if (window.lucide) { window.lucide.createIcons(); }
     });
     document.addEventListener('DOMContentLoaded', () => {
-        lucide.createIcons();
+        if (window.lucide) { window.lucide.createIcons(); }
+    });
+    document.addEventListener('livewire:init', () => {
+        Livewire.hook('morph.updated', ({ el, component }) => {
+            if (window.lucide) { window.lucide.createIcons(); }
+        });
     });
 
     // Listen for successful STK dispatch
     window.addEventListener('stk-sent', event => {
+        const detail = event.detail?.[0] ?? event.detail ?? {};
         Swal.fire({
             title: 'STK Push Sent!',
-            text: 'Please check your phone and enter your M-Pesa PIN to complete the registration fee payment.',
+            text: 'Please check your phone (' + (detail.phone ?? '') + ') and enter your M-Pesa PIN to complete the registration fee payment.',
             icon: 'info',
             showConfirmButton: false,
             allowOutsideClick: false,
@@ -102,11 +124,12 @@
         });
     });
 
-    // Listen for confirmed payment completion from the backend IPN webhook
-    window.addEventListener('payment-successful', event => {
+    // Listen for confirmed payment completion from backend polling
+    window.addEventListener('payment-successful', () => {
+        Swal.close();
         Swal.fire({
             title: 'Payment Successful!',
-            text: 'Payment successful, redirecting you to the portal.',
+            text: 'Registration fee confirmed successfully, redirecting you to the portal.',
             icon: 'success',
             timer: 2500,
             timerProgressBar: true,
@@ -117,11 +140,13 @@
         });
     });
 
-    // Listen for failed STK dispatch with friendly user-facing message
+    // Listen for failed STK dispatch
     window.addEventListener('stk-error', event => {
+        Swal.close();
+        const detail = event.detail?.[0] ?? event.detail ?? {};
         Swal.fire({
             title: 'Payment Request Failed',
-            text: 'Sorry, payment is not successful. Please try again or contact admin.',
+            text: detail.message ?? 'Sorry, payment is not successful. Please try again or contact admin.',
             icon: 'error',
             confirmButtonColor: '#2EA3F2',
             confirmButtonText: 'Try Again'

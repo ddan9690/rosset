@@ -139,6 +139,17 @@ class Portal extends Component
 
     /*
     |--------------------------------------------------------------------------
+    | Download Contribution PDF Action
+    |--------------------------------------------------------------------------
+    */
+
+    public function downloadContributionsPdf()
+    {
+        return redirect()->route('portal.pdf.contributions');
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Render
     |--------------------------------------------------------------------------
     */
@@ -201,14 +212,11 @@ class Portal extends Component
         |--------------------------------------------------------------------------
         | Contribution History
         |--------------------------------------------------------------------------
-        |
-        | Only successful benevolence contributions belonging to the
-        | currently logged-in member are displayed.
-        |
         */
 
         $contributionHistory =
             Transaction::query()
+                ->with(['benevolenceCase.member'])
                 ->where(
                     'user_id',
                     $user->id

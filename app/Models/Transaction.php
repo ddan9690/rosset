@@ -35,4 +35,12 @@ class Transaction extends Model
     {
         return $this->belongsTo(User::class);
     }
+
+    /**
+     * Get the benevolence case associated with this transaction.
+     */
+    public function benevolenceCase(): BelongsTo
+    {
+        return $this->belongsTo(BenevolenceCase::class, 'case_number', 'case_number');
+    }
 }

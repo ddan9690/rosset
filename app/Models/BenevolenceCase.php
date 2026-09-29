@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BenevolenceCase extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $fillable = [
         'case_number',
@@ -42,5 +44,13 @@ class BenevolenceCase extends Model
     public function creator()
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * Get all transactions related to this benevolence case.
+     */
+    public function transactions(): HasMany
+    {
+        return $this->hasMany(Transaction::class, 'case_number', 'case_number');
     }
 }
