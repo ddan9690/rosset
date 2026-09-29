@@ -36,17 +36,33 @@ return [
     ],
 
     'kcb' => [
-        'base_url' => env('KCB_BASE_URL'),
-        'token_url' => env('KCB_TOKEN_URL'),
+        'base_url' => env('APP_ENV') === 'local' 
+            ? env('KCB_SANDBOX_BASE_URL', 'https://uat.buni.kcbgroup.com') 
+            : env('KCB_PROD_BASE_URL'),
 
-        'consumer_key' => env('KCB_CONSUMER_KEY'),
-        'consumer_secret' => env('KCB_CONSUMER_SECRET'),
+        'token_url' => env('APP_ENV') === 'local' 
+            ? env('KCB_SANDBOX_TOKEN_URL', 'https://accounts.buni.kcbgroup.com/oauth2/token') 
+            : env('KCB_PROD_TOKEN_URL'),
 
+        'consumer_key' => env('APP_ENV') === 'local' 
+            ? env('KCB_SANDBOX_CONSUMER_KEY', 'jwVBQb8ybAkDnbK_cReWRLzD5A4a') 
+            : env('KCB_PROD_CONSUMER_KEY'),
+
+        'consumer_secret' => env('APP_ENV') === 'local' 
+            ? env('KCB_SANDBOX_CONSUMER_SECRET', 'zYFZvQg2IIOwfeZjGvVKCIvFweQkDDMwNo3Y8mvY4bsa') 
+            : env('KCB_PROD_CONSUMER_SECRET'),
+
+        'callback_url' => env('APP_ENV') === 'local' 
+            ? env('KCB_SANDBOX_CALLBACK_URL', 'https://44b5-105-164-38-37.ngrok-free.app/kcb/ipn') 
+            : env('KCB_PROD_CALLBACK_URL'),
+
+        'paybill_number' => env('APP_ENV') === 'local' 
+            ? null 
+            : env('KCB_PAYBILL_NUMBER', '522533'),
+
+        'account_number' => env('KCB_ACCOUNT_NUMBER', '7936435'),
         'account_prefix' => env('KCB_ACCOUNT_PREFIX'),
-        'paybill_number' => env('KCB_PAYBILL_NUMBER'),
         'pass_key' => env('KCB_PASS_KEY'),
-
-        'callback_url' => env('KCB_CALLBACK_URL'),
     ],
 
 ];

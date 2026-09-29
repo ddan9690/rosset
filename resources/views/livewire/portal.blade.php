@@ -214,15 +214,26 @@
                         </div>
 
 
-                        <p class="text-xs text-slate-500 font-mono">
+                        <div class="flex items-center space-x-3 flex-wrap gap-y-1 pt-0.5">
+                            <p class="text-xs text-slate-500 font-mono">
+                                Membership No:
+                                <span class="font-semibold text-slate-700">
+                                    {{ $membershipNumber }}
+                                </span>
+                            </p>
 
-                            Membership No:
+                            <span class="text-slate-300">|</span>
 
-                            <span class="font-semibold text-slate-700">
-                                {{ $membershipNumber }}
-                            </span>
-
-                        </p>
+                            <!-- Update Dependants Link -->
+                            <a
+                                href="{{ route('member.dependants.update') }}"
+                                wire:navigate
+                                class="text-xs font-semibold text-[#0E3A59] hover:text-slate-900 hover:underline flex items-center space-x-1"
+                            >
+                                <i data-lucide="users" class="w-3.5 h-3.5"></i>
+                                <span>update dependants</span>
+                            </a>
+                        </div>
 
                     </div>
 

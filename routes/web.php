@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\KcbWebhookController;
 use App\Http\Controllers\PDF\MemberContributionsPdfController;
+use App\Http\Controllers\PDF\TransactionsPdfController;
 use App\Http\Middleware\UpdateUserLastActive;
 use App\Livewire\Admin\BenevolenceCases\Create as BenevolenceCaseCreate;
 use App\Livewire\Admin\BenevolenceCases\Edit as BenevolenceCaseEdit;
@@ -15,11 +16,13 @@ use App\Livewire\Admin\Members\Edit as MemberEdit;
 use App\Livewire\Admin\Members\Index as MemberIndex;
 use App\Livewire\Admin\Members\Show as MemberShow;
 use App\Livewire\Admin\Settings;
+use App\Livewire\Admin\Transactions;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\BenevolenceContribution;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\Updates;
+use App\Livewire\MemberDependants;
 use App\Livewire\MemberProfile;
 use App\Livewire\PDF\MemberContributionsPdf;
 use App\Livewire\Portal;
@@ -54,6 +57,9 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/portal', Portal::class)->name('portal');
     Route::get('/portal/solidarity', SolidarityFund::class)->name('member.solidarity');
     Route::get('/member/profile', MemberProfile::class)->name('profile.update');
+    
+    // Member Dependants Route (Aligned name with portal view)
+    Route::get('/member/dependants', MemberDependants::class)->name('member.dependants.update');
 
     // Benevolence Contribution Route using case ID
     Route::get('/portal/benevolence/contribute/{id}', BenevolenceContribution::class)->name('benevolence.contribute');
@@ -78,6 +84,14 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/admin/benevolence/cases/create', BenevolenceCaseCreate::class)->name('admin.benevolence.cases.create');
     Route::get('/admin/benevolence/cases/{id}/{slug}/edit', BenevolenceCaseEdit::class)->name('admin.benevolence.cases.edit');
     Route::get('/admin/benevolence/cases/{id}/{slug}', BenevolenceCaseShow::class)->name('admin.benevolence.cases.show');
+
+    // Gateway Transactions Route
+    Route::get('/admin/transactions', Transactions::class)->name('admin.transactions');
+
+    // Admin PDF Reports Group
+    Route::prefix('admin/pdf')->name('admin.pdf.')->group(function () {
+        Route::get('/transactions', [TransactionsPdfController::class, 'download'])->name('transactions.download');
+    });
 
     Route::get('/admin/members/onboard', MemberOnboard::class)->name('admin.members.onboard');
     Route::get('/admin/settings', Settings::class)->name('admin.settings');

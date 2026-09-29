@@ -181,8 +181,6 @@
             timerProgressBar: true,
             showConfirmButton: false,
             allowOutsideClick: false
-        }).then(() => {
-            window.location.reload();
         });
     });
 

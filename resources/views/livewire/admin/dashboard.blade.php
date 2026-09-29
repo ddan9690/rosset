@@ -134,41 +134,51 @@
     <!-- Main Content Body: Transactions & Transaction Ledgers Grid -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
         
-        <!-- Recent Gateways Transactions Feed -->
-        <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
-            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
-                <h3 class="font-bold text-sm uppercase tracking-wider text-slate-800">Recent Gateway Transactions</h3>
-                <span class="text-xs font-medium text-slate-400">M-Pesa / STK</span>
+        <!-- Recent Gateway Transactions Feed -->
+        <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden flex flex-col justify-between">
+            <div>
+                <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <h3 class="font-bold text-sm uppercase tracking-wider text-slate-800">Recent Gateway Transactions</h3>
+                    <span class="text-xs font-medium text-slate-400">M-Pesa / STK</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                                <th class="py-3 px-4">Reference</th>
+                                <th class="py-3 px-4">Type</th>
+                                <th class="py-3 px-4">Amount</th>
+                                <th class="py-3 px-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            @forelse($recentTransactions as $tx)
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="py-3 px-4 font-mono font-bold text-slate-900">{{ $tx->reference_number }}</td>
+                                    <td class="py-3 px-4 uppercase text-[10px] font-semibold text-slate-600">{{ str_replace('_', ' ', $tx->type) }}</td>
+                                    <td class="py-3 px-4 font-mono font-bold text-emerald-600">{{ number_format($tx->amount) }}</td>
+                                    <td class="py-3 px-4">
+                                        <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                                            {{ ucfirst($tx->status) }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="4" class="py-6 text-center text-slate-400">No transactions recorded.</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
             </div>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
-                            <th class="py-3 px-4">Reference</th>
-                            <th class="py-3 px-4">Type</th>
-                            <th class="py-3 px-4">Amount</th>
-                            <th class="py-3 px-4">Status</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-slate-700">
-                        @forelse($recentTransactions as $tx)
-                            <tr class="hover:bg-slate-50 transition">
-                                <td class="py-3 px-4 font-mono font-bold text-slate-900">{{ $tx->reference_number }}</td>
-                                <td class="py-3 px-4 uppercase text-[10px] font-semibold text-slate-600">{{ str_replace('_', ' ', $tx->type) }}</td>
-                                <td class="py-3 px-4 font-mono font-bold text-emerald-600">KES {{ number_format($tx->amount, 2) }}</td>
-                                <td class="py-3 px-4">
-                                    <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
-                                        {{ ucfirst($tx->status) }}
-                                    </span>
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="4" class="py-6 text-center text-slate-400">No transactions recorded.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
+
+            <!-- View More Transactions Link Footer -->
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end">
+                <a href="{{ route('admin.transactions') }}" wire:navigate class="inline-flex items-center gap-1.5 text-xs font-bold text-[#2EA3F2] hover:text-sky-600 transition-all">
+                    View More Transactions
+                    <i data-lucide="arrow-right" class="w-4 h-4"></i>
+                </a>
             </div>
         </div>
 
@@ -193,7 +203,7 @@
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="py-3 px-4 font-mono font-bold text-slate-900">{{ $ledger->reference }}</td>
                                 <td class="py-3 px-4 text-slate-600">{{ $ledger->channel }}</td>
-                                <td class="py-3 px-4 font-mono font-bold text-slate-800">KES {{ number_format($ledger->amount, 2) }}</td>
+                                <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ number_format($ledger->amount) }}</td>
                                 <td class="py-3 px-4 font-mono text-slate-500 text-[11px]">{{ $ledger->account_identifier }}</td>
                             </tr>
                         @empty

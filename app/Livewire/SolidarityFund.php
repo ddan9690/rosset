@@ -138,6 +138,7 @@ class SolidarityFund extends Component
             // Reset pagination to show latest transaction immediately
             $this->resetPage();
 
+            // Dispatch event to close SweetAlert without reloading the full page
             $this->dispatch('payment-successful');
             return;
         }

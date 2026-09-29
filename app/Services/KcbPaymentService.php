@@ -90,7 +90,6 @@ class KcbPaymentService
             }
 
             $token = $response->json('access_token');
-            // dd($token);
 
             if (!$token) {
                 Log::error('KCB Token Missing From Response', [
@@ -119,7 +118,7 @@ class KcbPaymentService
         string $phone,
         float $amount,
         ?string $accountIdentifier = null,
-        string $description = 'Payment for school fees',
+        string $description = 'Payment for transaction',
         ?int $userId = null,
         string $transactionType = 'registration_fee',
         ?string $caseNumber = null
@@ -137,7 +136,6 @@ class KcbPaymentService
             $phone = $this->normalizePhoneNumber($phone);
             $invoiceNumber = $accountIdentifier ?: $this->accountNumber;
 
-            // Sandbox payload: Using KCB_ACCOUNT_NUMBER as invoiceNumber and leaving orgShortCode empty
             $payload = [
                 'phoneNumber' => $phone,
                 'amount' => $amount,
@@ -166,7 +164,6 @@ class KcbPaymentService
                 );
 
             $responseData = $response->json();
-            // dd($response);
 
             Log::info('KCB STK Push Response', [
                 'status' => $response->status(),
@@ -227,9 +224,10 @@ class KcbPaymentService
 
             Transaction::create([
                 'user_id' => $userId,
-                'reference_number' => 'PENDING-' . $checkoutRequestId,
+                'reference_number' => null, 
                 'checkout_request_id' => $checkoutRequestId,
-                'type' => $transactionType,
+                'merchant_request_id' => $merchantRequestId,
+                'type' => $transactionType, 
                 'case_number' => $caseNumber,
                 'amount' => $amount,
                 'currency' => 'KES',
@@ -276,7 +274,6 @@ class KcbPaymentService
                 ?? data_get($data, 'body.stkCallback')
                 ?? data_get($data, 'stkCallback')
                 ?? $data;
-                
 
             if (!is_array($stkCallback)) {
                 Log::error('KCB IPN Invalid Callback Structure', [
@@ -398,8 +395,7 @@ class KcbPaymentService
                     $receiptNumber,
                     $phoneNumber,
                     $checkoutRequestId,
-                    $merchantRequestId,
-                    $metadata
+                    $merchantRequestId
                 ) {
                     $lockedTransaction = Transaction::where(
                         'id',
@@ -485,9 +481,12 @@ class KcbPaymentService
 
                             if ($wallet) {
                                 $wallet->increment('balance', $finalAmount);
+                                $wallet->increment('total_topups', $finalAmount);
                             } elseif (method_exists($user, 'solidarityFund')) {
                                 $user->solidarityFund()->create([
                                     'balance' => $finalAmount,
+                                    'total_topups' => $finalAmount,
+                                    'total_deductions' => 0,
                                 ]);
                             }
                         }
