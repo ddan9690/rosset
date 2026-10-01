@@ -63,9 +63,10 @@ class RegistrationFee extends Component
             $this->stkSent = false;
             $this->activeCheckoutRequestId = null;
 
-            // Ensure user flag is set if transaction was captured via IPN
-            if (!$user->registration_fee_paid) {
-                $user->update(['registration_fee_paid' => true]);
+            // Ensure user activation and flag are set if transaction was captured externally
+            $freshUser = $user->fresh();
+            if (!$freshUser->registration_fee_paid) {
+                $freshUser->activateAfterPayment();
             }
 
             $this->dispatch('payment-successful');
@@ -104,7 +105,7 @@ class RegistrationFee extends Component
             accountIdentifier: $accountIdentifier,
             description: 'ROSSET-SWA Registration Fee',
             userId: $user->id,
-            transactionType: 'registration_fee' // Ensure your service handles/passes this type to the transaction creator
+            transactionType: 'registration_fee'
         );
 
         if ($result['success']) {

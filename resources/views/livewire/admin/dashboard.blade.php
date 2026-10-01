@@ -15,7 +15,7 @@
     </div>
 
     <!-- Stat Cards Grid -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         
         <!-- Total Members Card (With Breakdowns) -->
         <div class="bg-white p-5 rounded-xl shadow-xs border border-slate-200 space-y-4">
@@ -33,6 +33,26 @@
                 <div class="text-slate-600">Female: <strong class="text-slate-800 font-mono">{{ $femaleMembers }}</strong></div>
                 <div class="text-slate-600">Junior: <strong class="text-slate-800 font-mono">{{ $juniorSchoolMembers }}</strong></div>
                 <div class="text-slate-600">Senior: <strong class="text-slate-800 font-mono">{{ $seniorSchoolMembers }}</strong></div>
+            </div>
+        </div>
+
+        <!-- Membership Requests Card -->
+        <div class="bg-white p-5 rounded-xl shadow-xs border border-slate-200 flex flex-col justify-between space-y-4">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">Membership Requests</p>
+                    <h3 class="text-2xl sm:text-3xl font-extrabold mt-1 text-amber-600">{{ number_format($pendingRequestsCount) }}</h3>
+                    {{-- <p class="text-[10px] text-slate-500 mt-1">Pending approval</p> --}}
+                </div>
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center bg-amber-50 text-amber-600 flex-shrink-0">
+                    <i data-lucide="user-plus" class="w-5 h-5 sm:w-6 sm:h-6"></i>
+                </div>
+            </div>
+            <div class="border-t border-slate-100 pt-2">
+                <a href="{{ route('admin.membership-requests') }}" wire:navigate class="w-full inline-flex items-center justify-center gap-1.5 py-1.5 px-3 bg-amber-50 hover:bg-amber-100 text-amber-800 rounded-lg text-xs font-bold transition">
+                    Review Requests
+                    <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                </a>
             </div>
         </div>
 

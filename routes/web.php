@@ -10,6 +10,7 @@ use App\Livewire\Admin\BenevolenceCases\Index as BenevolenceCaseIndex;
 use App\Livewire\Admin\BenevolenceCases\Show as BenevolenceCaseShow;
 use App\Livewire\Admin\BenevolenceCategories;
 use App\Livewire\Admin\Dashboard;
+use App\Livewire\Admin\ManageMembershipRequests; // Updated Admin Import
 use App\Livewire\Admin\MemberOnboard;
 use App\Livewire\Admin\Members\Create as MemberCreate;
 use App\Livewire\Admin\Members\Edit as MemberEdit;
@@ -19,12 +20,12 @@ use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Transactions;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
+use App\Livewire\Auth\MembershipStatus; // Added Unified Status Import
 use App\Livewire\BenevolenceContribution;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\Updates;
 use App\Livewire\MemberDependants;
 use App\Livewire\MemberProfile;
-use App\Livewire\PDF\MemberContributionsPdf;
 use App\Livewire\Portal;
 use App\Livewire\RegistrationFee;
 use App\Livewire\SolidarityFund;
@@ -53,6 +54,8 @@ Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
 
 // Authenticated Routes with Activity Tracking Middleware
 Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
+    Route::get('/membership/status', MembershipStatus::class)->name('membership.status');
+
     Route::get('/register/fee', RegistrationFee::class)->name('register.fee');
     Route::get('/portal', Portal::class)->name('portal');
     Route::get('/portal/solidarity', SolidarityFund::class)->name('member.solidarity');
@@ -72,6 +75,9 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     // Admin Routes
     Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
     Route::get('/admin/benevolence/categories', BenevolenceCategories::class)->name('admin.benevolence.categories');
+    
+    // Manage Membership Requests Route (Admin)
+    Route::get('/admin/membership-requests', ManageMembershipRequests::class)->name('admin.membership-requests');
 
     // Members Management Routes (CRUD Architecture)
     Route::get('/admin/members', MemberIndex::class)->name('admin.members');

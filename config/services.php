@@ -53,7 +53,7 @@ return [
             : env('KCB_PROD_CONSUMER_SECRET'),
 
         'callback_url' => env('APP_ENV') === 'local' 
-            ? env('KCB_SANDBOX_CALLBACK_URL', 'https://44b5-105-164-38-37.ngrok-free.app/kcb/ipn') 
+            ? env('KCB_SANDBOX_CALLBACK_URL') 
             : env('KCB_PROD_CALLBACK_URL'),
 
         'paybill_number' => env('APP_ENV') === 'local' 

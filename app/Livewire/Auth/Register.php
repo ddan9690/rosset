@@ -3,22 +3,26 @@
 namespace App\Livewire\Auth;
 
 use App\Models\User;
+use App\Models\MembershipRequest;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.auth')]
 #[Title('Membership Registration | ROSSET-SWA')]
 class Register extends Component
 {
+    use WithFileUploads;
+
     public $title = 'Membership Registration | ROSSET-SWA';
 
-    public $step = 1; // 1 = Lookup step, 2 = Full registration form
-    public $lookup_input = ''; // TSC number lookup
+    public $step = 1; 
+    public $lookup_input = ''; 
 
-    // Full form fields
     public $first_name = '';
     public $last_name = '';
     public $salutation = 'Mr.';
@@ -31,6 +35,7 @@ class Register extends Component
     public $email = '';
     public $password = '';
     public $password_confirmation = '';
+    public $profile_picture; // Added for file upload
 
     public function checkMember()
     {
@@ -40,13 +45,11 @@ class Register extends Component
 
         $user = User::where('tsc_number', $this->lookup_input)->first();
 
-        // If TSC number is found AND registration fee is paid, take them to the login page
         if ($user && $user->registration_fee_paid) {
             session()->flash('info', 'Your account is already registered and active. Please log in.');
             return redirect()->route('login');
         }
 
-        // If found but registration fee is NOT paid yet, log them in and take them to fee payment
         if ($user && !$user->registration_fee_paid) {
             Auth::login($user);
             $user->update(['last_login_at' => now()]);
@@ -54,7 +57,6 @@ class Register extends Component
             return redirect()->route('register.fee');
         }
 
-        // If NOT found at all, proceed to Step 2 (Full Registration Form)
         $this->tsc_number = $this->lookup_input;
         $this->step = 2;
     }
@@ -73,33 +75,46 @@ class Register extends Component
             'school' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
+            'profile_picture' => 'nullable|image|max:2048', // Max 2MB image validation
         ], [
             'phone.regex' => 'Please enter a valid phone number format.',
         ]);
 
         try {
-            $user = User::create([
-                'first_name' => $this->first_name,
-                'last_name' => $this->last_name,
-                'salutation' => $this->salutation,
-                'gender' => $this->gender,
-                'phone' => $this->phone,
-                'tsc_number' => $this->tsc_number,
-                'id_number' => $this->id_number,
-                'school_level' => $this->school_level,
-                'school' => $this->school,
-                'email' => $this->email,
-                'status' => 'pending',
-                'registration_fee_paid' => false,
-                'is_profile_complete' => false,
-                'password' => Hash::make($this->password),
-                'last_login_at' => now(),
-            ]);
+            DB::transaction(function () {
+                $profilePath = null;
+                if ($this->profile_picture) {
+                    $profilePath = $this->profile_picture->store('profile-pictures', 'public');
+                }
 
-            Auth::login($user);
+                $user = User::create([
+                    'first_name' => $this->first_name,
+                    'last_name' => $this->last_name,
+                    'salutation' => $this->salutation,
+                    'gender' => $this->gender,
+                    'phone' => $this->phone,
+                    'tsc_number' => $this->tsc_number,
+                    'id_number' => $this->id_number,
+                    'school_level' => $this->school_level,
+                    'school' => $this->school,
+                    'email' => $this->email,
+                    'profile_picture' => $profilePath,
+                    'status' => 'pending',
+                    'registration_fee_paid' => false,
+                    'is_profile_complete' => false,
+                    'password' => Hash::make($this->password),
+                ]);
 
-            // Redirect to registration fee payment page
-            return redirect()->route('register.fee');
+                MembershipRequest::create([
+                    'user_id' => $user->id,
+                    'status' => 'pending',
+                    'approved_by' => null,
+                ]);
+
+                Auth::login($user);
+            });
+
+            return redirect()->route('membership.status');
         } catch (\Exception $e) {
             $this->addError('email', 'Registration failed: ' . $e->getMessage());
         }

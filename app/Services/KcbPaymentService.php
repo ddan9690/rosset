@@ -224,10 +224,10 @@ class KcbPaymentService
 
             Transaction::create([
                 'user_id' => $userId,
-                'reference_number' => null, 
+                'reference_number' => null,
                 'checkout_request_id' => $checkoutRequestId,
                 'merchant_request_id' => $merchantRequestId,
-                'type' => $transactionType, 
+                'type' => $transactionType,
                 'case_number' => $caseNumber,
                 'amount' => $amount,
                 'currency' => 'KES',
@@ -461,15 +461,13 @@ class KcbPaymentService
                         $user = User::find($userId);
 
                         if ($user) {
-                            $user->update([
-                                'registration_fee_paid' => true,
-                                'status' => 'active',
-                            ]);
+                            $user->activateAfterPayment();
                         }
 
                         Log::info('KCB Registration Fee Updated', [
                             'user_id' => $userId,
                             'transaction_id' => $lockedTransaction->id,
+                            'membership_number' => $user->membership_number ?? null,
                         ]);
                     } elseif ($transactionType === 'wallet_topup') {
                         $user = User::find($userId);

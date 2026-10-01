@@ -6,6 +6,7 @@ use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\DB;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable
@@ -55,5 +56,36 @@ class User extends Authenticatable
             'last_active_at' => 'datetime',
             'registration_fee_paid' => 'boolean',
         ];
+    }
+
+    /**
+     * Activate the user after a successful registration fee payment 
+     * and assign the next sequential membership number if not already present.
+     */
+    public function activateAfterPayment(): void
+    {
+        // Prevent re-processing if already active or paid
+        if ($this->registration_fee_paid && $this->status === 'active') {
+            return;
+        }
+
+        // Determine membership number only if not already assigned
+        $membershipNumber = $this->membership_number;
+        
+        if (!$membershipNumber) {
+            // Find the maximum existing membership number numerically from the database
+            $lastMembershipNumber = self::max(DB::raw('CAST(membership_number AS UNSIGNED)'));
+            
+            // If prior members exist, increment the highest number; otherwise start at 1
+            $nextNumber = $lastMembershipNumber ? $lastMembershipNumber + 1 : 1; 
+            
+            $membershipNumber = (string) $nextNumber;
+        }
+
+        $this->update([
+            'registration_fee_paid' => true,
+            'membership_number' => $membershipNumber,
+            'status' => 'active',
+        ]);
     }
 }

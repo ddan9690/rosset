@@ -19,13 +19,7 @@ class BenevolenceContribution extends Component
 
     public $case;
 
-    /*
-    |--------------------------------------------------------------------------
-    | TESTING AMOUNT
-    |--------------------------------------------------------------------------
-    */
-
-    public $amount = 1;
+    public $amount = 0;
 
     public $phone = '';
 
@@ -70,11 +64,11 @@ class BenevolenceContribution extends Component
 
         /*
         |--------------------------------------------------------------------------
-        | TESTING
+        | Set Dynamic Amount From Category
         |--------------------------------------------------------------------------
         */
 
-        $this->amount = 1;
+        $this->amount = $this->case->category->amount ?? 0;
 
         /*
         |--------------------------------------------------------------------------
@@ -203,11 +197,6 @@ class BenevolenceContribution extends Component
             |--------------------------------------------------------------------------
             | Redirect Directly To Portal
             |--------------------------------------------------------------------------
-            |
-            | The portal will display the SweetAlert using
-            | the payment=success query parameter.
-            |
-            |--------------------------------------------------------------------------
             */
 
             return redirect()->route(
@@ -281,11 +270,11 @@ class BenevolenceContribution extends Component
 
         /*
         |--------------------------------------------------------------------------
-        | TEST AMOUNT
+        | Dynamic Amount
         |--------------------------------------------------------------------------
         */
 
-        $amount = 1;
+        $amount = $this->case->category->amount ?? 0;
 
         /*
         |--------------------------------------------------------------------------

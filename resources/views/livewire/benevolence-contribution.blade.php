@@ -45,7 +45,7 @@
 
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-widest bg-emerald-50 text-emerald-700 border border-emerald-200">
 
-                    KCB M-Pesa Secure Pay
+                    Contribute
 
                 </span>
 
@@ -58,26 +58,15 @@
 
                 <h3 class="text-base font-bold text-slate-900">
 
-                    Case #{{ $case->case_number }}
+                    Case No. {{ $case->case_number }}
 
                 </h3>
 
                 <p class="text-xs text-slate-600 leading-relaxed">
 
-                    Contributing towards
-
-                    <strong class="text-slate-900">
-
-                        {{
-                            trim(
-                                ($case->member->salutation ?? '') .
-                                ' ' .
-                                ($case->member->first_name ?? '') .
-                                ' ' .
-                                ($case->member->last_name ?? '')
-                            )
-                        }}
-
+                    Contributing towards Gordon Awino for the loss of 
+                    <strong class="text-slate-900 lowercase">
+                        {{ $case->category->name ?? 'benevolence' }}
                     </strong>
 
                 </p>
@@ -89,72 +78,15 @@
 
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3 text-xs">
 
-                <div class="flex justify-between gap-4">
-
-                    <span class="text-slate-500">
-                        Category:
-                    </span>
-
-                    <span class="font-bold text-slate-800 uppercase text-right">
-
-                        {{ $case->category->name ?? 'Benevolence' }}
-
-                    </span>
-
-                </div>
-
-
-                <div class="flex justify-between gap-4">
-
-                    <span class="text-slate-500">
-                        Member:
-                    </span>
-
-                    <span class="font-bold text-slate-800 text-right">
-
-                        {{ Auth::user()->first_name }}
-                        {{ Auth::user()->last_name }}
-
-                    </span>
-
-                </div>
-
-
                 <div class="flex justify-between border-t border-slate-200 pt-3">
 
                     <span class="text-slate-600 font-bold">
-                        Test Contribution:
+                        Contribution Amount:
                     </span>
 
                     <span class="text-[#2EA3F2] font-mono text-sm font-bold">
 
-                        KES 1.00
-
-                    </span>
-
-                </div>
-
-            </div>
-
-
-            <!-- TEST NOTICE -->
-
-            <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-xl font-medium">
-
-                <div class="flex items-start gap-2">
-
-                    <i
-                        data-lucide="info"
-                        class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"
-                    ></i>
-
-                    <span>
-
-                        <strong>Testing:</strong>
-
-                        This contribution is currently fixed at
-
-                        <strong>KES 1.00</strong>.
+                        KSH {{ number_format($amount, 0) }}
 
                     </span>
 
@@ -251,7 +183,7 @@
                             wire:loading.remove
                             wire:target="sendStkPrompt"
                         >
-                            Pay KES 1.00
+                            Pay KSH {{ number_format($amount, 0) }}
                         </span>
 
                         <span
@@ -408,7 +340,9 @@
                 text:
                     'Check your phone (' +
                     (detail.phone ?? '') +
-                    ') and enter your M-Pesa PIN to complete the KES 1.00 contribution.',
+                    ') and enter your M-Pesa PIN to complete the KSH ' +
+                    Number(detail.amount ?? 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0}) +
+                    ' contribution.',
 
                 icon: 'info',
 

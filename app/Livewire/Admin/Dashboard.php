@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\User;
+use App\Models\MembershipRequest;
 use App\Models\BenevolenceCase;
 use App\Models\Transaction;
 use App\Models\TransactionLedger;
@@ -24,7 +25,8 @@ class Dashboard extends Component
         $juniorSchoolMembers = User::where('school_level', 'Junior School')->count();
         $seniorSchoolMembers = User::where('school_level', 'Senior School')->count();
 
-        // Status-based Member Counts
+        // Status-based Member Counts & Pending Membership Requests
+        $pendingRequestsCount = MembershipRequest::where('status', 'pending')->count();
         $defaultersCount = User::where('status', 'defaulted')->count();
         $suspendedCount = User::where('status', 'suspended')->count();
         $deregisteredCount = User::where('status', 'deregistered')->count();
@@ -58,6 +60,7 @@ class Dashboard extends Component
             'femaleMembers' => $femaleMembers,
             'juniorSchoolMembers' => $juniorSchoolMembers,
             'seniorSchoolMembers' => $seniorSchoolMembers,
+            'pendingRequestsCount' => $pendingRequestsCount,
             'defaultersCount' => $defaultersCount,
             'suspendedCount' => $suspendedCount,
             'deregisteredCount' => $deregisteredCount,
