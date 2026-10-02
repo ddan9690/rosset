@@ -37,6 +37,16 @@ class Register extends Component
     public $password_confirmation = '';
     public $profile_picture; // Added for file upload
 
+    /**
+     * Redirect already authenticated users away from the registration page.
+     */
+    public function mount()
+    {
+        if (Auth::check()) {
+            return redirect()->intended(route('portal'));
+        }
+    }
+
     public function checkMember()
     {
         $this->validate([

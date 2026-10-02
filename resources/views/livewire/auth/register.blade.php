@@ -27,7 +27,7 @@
                 </div>
 
                 <div>
-                    <input type="text" wire:model="lookup_input" required placeholder="Enter TSC Number" class="w-full px-4 py-3.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-base bg-white shadow-xs" autofocus>
+                    <input type="number" wire:model="lookup_input" required inputmode="numeric" pattern="[0-9]*" placeholder="Enter TSC Number" class="w-full px-4 py-3.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none text-base bg-white shadow-xs" autofocus>
                     @error('lookup_input') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                 </div>
 
@@ -99,7 +99,7 @@
 
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">ID Number</label>
-                        <input type="text" wire:model="id_number" required class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="ID No.">
+                        <input type="number" wire:model="id_number" required inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="ID No.">
                         @error('id_number') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -126,7 +126,7 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Phone Number</label>
-                        <input type="text" wire:model="phone" required class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="07XXXXXXXX">
+                        <input type="number" wire:model="phone" required inputmode="numeric" pattern="[0-9]*" class="w-full px-3 py-2 border border-slate-300 rounded text-sm" placeholder="07XXXXXXXX">
                         @error('phone') 
                             <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span>
                             <span class="text-slate-600 text-[10px] mt-1 block bg-slate-50 border border-slate-200 rounded p-1.5 leading-relaxed">
@@ -161,7 +161,7 @@
                     </div>
                 </div>
 
-                <!-- Profile Picture Input (Placed right before the submit buttons) -->
+                <!-- Profile Picture Input -->
                 <div>
                     <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Profile Picture <span class="text-slate-400 font-normal"></span></label>
                     <input type="file" wire:model="profile_picture" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer border border-slate-300 rounded">

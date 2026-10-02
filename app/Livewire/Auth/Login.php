@@ -17,6 +17,16 @@ class Login extends Component
     public $password = '';
     public $errorMessage = null;
 
+    /**
+     * Redirect already authenticated users away from the login page.
+     */
+    public function mount()
+    {
+        if (Auth::check()) {
+            return redirect()->intended(route('portal'));
+        }
+    }
+
     protected $rules = [
         'login' => 'required',
         'password' => 'required',
@@ -39,8 +49,8 @@ class Login extends Component
             // Stamp last login time
             $user->update(['last_login_at' => now()]);
 
-            // Redirect members straight to their portal route
-            return redirect()->route('portal');
+            // Redirect members straight to their portal route (respecting intended URL if available)
+            return redirect()->intended(route('portal'));
         }
 
         $this->errorMessage = 'Invalid phone number or password.';

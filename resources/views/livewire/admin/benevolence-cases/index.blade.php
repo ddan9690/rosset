@@ -1,5 +1,23 @@
 <div class="space-y-6">
 
+    <!-- ================= SOLIDARITY SETTLEMENT NOTIFICATION ALERT ================= -->
+    @if(session()->has('solidarity_settled'))
+        @php $data = session('solidarity_settled'); @endphp
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-900 text-xs px-5 py-4 rounded-xl font-medium flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 flex-shrink-0"></i>
+                <div>
+                    <p class="font-bold">Benevolence case created successfully!</p>
+                    @if($data['enabled'])
+                        <p class="text-emerald-700 mt-0.5">Solidarity auto-settlement completed: <strong class="font-mono">{{ $data['settled'] }}</strong> out of <span class="font-mono">{{ $data['attempted'] }}</span> active members had sufficient wallet balance and were successfully settled.</p>
+                    @else
+                        <p class="text-emerald-700 mt-0.5">No contibution made form  Solidarity Fund for this case.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    @endif
+
     <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-xs">
         <div>
             <h3 class="font-bold text-sm uppercase tracking-wider" style="color: #0E3A59;">Benevolence Cases</h3>
