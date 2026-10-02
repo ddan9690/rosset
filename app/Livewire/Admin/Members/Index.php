@@ -25,7 +25,6 @@ class Index extends Component
     {
         $user = User::findOrFail($id);
         
-        // Prevent deleting yourself if logged in as admin
         if (auth()->id() === $user->id) {
             session()->flash('error', 'You cannot delete your own account.');
             return;
@@ -38,8 +37,16 @@ class Index extends Component
 
     public function render()
     {
-        $users = User::query()
-            ->when($this->search, function ($query) {
+        $query = User::query();
+
+        // If the current user is NOT a super admin, hide super admins from the directory list
+        if (!auth()->user()->hasRole('super admin')) {
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', 'super admin');
+            });
+        }
+
+        $users = $query->when($this->search, function ($query) {
                 $term = '%' . $this->search . '%';
                 $query->where(function ($q) use ($term) {
                     $q->where('first_name', 'like', $term)

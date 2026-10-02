@@ -62,10 +62,10 @@ class SolidarityFund extends Component
     public function topUpWallet(KcbPaymentService $paymentService)
     {
         $this->validate([
-            'amount' => 'required|integer|min:50',
+            'amount' => 'required|integer|min:2',
             'phone' => ['required', 'string', 'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/'],
         ], [
-            'amount.min' => 'The minimum top-up amount is KES 50.',
+            'amount.min' => 'The minimum top-up amount is Ksh 2.',
             'phone.regex' => 'Please enter a valid M-Pesa phone number format.',
         ]);
 

@@ -1,146 +1,412 @@
 <div class="space-y-4">
+
     <!-- Header & Page Title Bar -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-3.5 rounded-xl shadow-xs border border-slate-200">
+    <div
+        class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-white p-3.5 rounded-xl shadow-xs border border-slate-200">
+
         <div>
-            <h2 class="text-base font-extrabold text-slate-900">Transactions</h2>
+            <h2 class="text-base font-extrabold text-slate-900">
+                Transactions
+            </h2>
+
+            <p class="text-[11px] text-slate-500 mt-0.5">
+                View and search all payment gateway transactions.
+            </p>
         </div>
+
         <div>
-            <a href="{{ route('admin.dashboard') }}" wire:navigate class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-all">
+            <a href="{{ route('admin.dashboard') }}"
+                wire:navigate
+                class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold uppercase tracking-wider rounded-lg transition-all">
+
                 <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+
                 Back to Dashboard
+
             </a>
         </div>
+
     </div>
+
 
     <!-- Total Transacted Summary Card -->
-    <div class="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 rounded-xl shadow-sm text-white flex items-center justify-between">
+    <div
+        class="bg-gradient-to-r from-emerald-500 to-teal-600 p-4 rounded-xl shadow-sm text-white flex items-center justify-between">
+
         <div>
+
             <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-100">
-                @if($startDate || $endDate || $search)
-                    Filtered Total Transacted 
+
+                @if ($startDate || $endDate || $search)
+                    Filtered Total Transacted
                 @else
-                    Total Transacted 
+                    Total Transacted
                 @endif
+
             </p>
-            <h3 class="text-xl sm:text-2xl font-extrabold font-mono mt-0.5">KSH {{ number_format($totalTransactedAmount, 2) }}</h3>
+
+            <h3 class="text-xl sm:text-2xl font-extrabold font-mono mt-0.5">
+                KSH {{ number_format($totalTransactedAmount, 2) }}
+            </h3>
+
         </div>
+
         <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+
             <i data-lucide="wallet" class="w-5 h-5 text-white"></i>
+
         </div>
+
     </div>
 
-    <!-- Compact Filters and Search Bar -->
-    <div class="bg-white p-3 rounded-xl shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-        <!-- Search Input -->
+
+    <!-- Filters and Search -->
+    <div
+        class="bg-white p-3 rounded-xl shadow-xs border border-slate-200 grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
+
+        <!-- Search -->
         <div class="sm:col-span-2">
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Search</label>
+
+            <label
+                class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+
+                Search
+
+            </label>
+
             <div class="relative">
-                <span class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+
+                <span
+                    class="absolute inset-y-0 left-0 flex items-center pl-2.5 pointer-events-none text-slate-400">
+
                     <i data-lucide="search" class="w-3.5 h-3.5"></i>
+
                 </span>
-                <input type="text" wire:model.live.debounce.300ms="search" placeholder="Enter reference, phone..." class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
+                <input
+                    type="text"
+                    wire:model.live.debounce.300ms="search"
+                    placeholder="Reference, phone, member name, MEM NO..."
+                    class="w-full pl-8 pr-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
             </div>
+
         </div>
+
 
         <!-- Start Date -->
         <div>
-            <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">From Date</label>
-            <input type="date" wire:model.live="startDate" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
+            <label
+                class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+
+                From Date
+
+            </label>
+
+            <input
+                type="date"
+                wire:model.live="startDate"
+                class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
         </div>
+
 
         <!-- End Date & Reset -->
         <div class="flex gap-2">
+
             <div class="flex-1">
-                <label class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">To Date</label>
-                <input type="date" wire:model.live="endDate" class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
+                <label
+                    class="block text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">
+
+                    To Date
+
+                </label>
+
+                <input
+                    type="date"
+                    wire:model.live="endDate"
+                    class="w-full px-2.5 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:border-[#2EA3F2] font-mono">
+
             </div>
-            @if($search || $startDate || $endDate)
+
+
+            @if ($search || $startDate || $endDate)
+
                 <div class="flex items-end">
-                    <button wire:click="clearFilters" class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all flex items-center justify-center" title="Reset Filters">
+
+                    <button
+                        wire:click="clearFilters"
+                        class="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 rounded-lg text-xs font-bold transition-all flex items-center justify-center"
+                        title="Reset Filters">
+
                         <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+
                     </button>
+
                 </div>
+
             @endif
+
         </div>
+
     </div>
 
-    <!-- Action Toolbar (Download PDF Button Above Table) -->
+
+    <!-- Action Toolbar -->
     <div class="flex justify-end">
-        <a href="{{ route('admin.pdf.transactions.download', ['search' => $search, 'startDate' => $startDate, 'endDate' => $endDate]) }}" target="_blank" class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs">
+
+        <a
+            href="{{ route('admin.pdf.transactions.download', [
+                'search' => $search,
+                'startDate' => $startDate,
+                'endDate' => $endDate,
+            ]) }}"
+            target="_blank"
+            class="inline-flex items-center gap-1.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold uppercase tracking-wider rounded-xl transition-all shadow-xs">
+
             <i data-lucide="file-text" class="w-4 h-4"></i>
+
             Download PDF Report
+
         </a>
+
     </div>
 
-    <!-- High-Density Transactions Table -->
+
+    <!-- Full Transactions Table -->
     <div class="bg-white rounded-xl shadow-xs border border-slate-200 overflow-hidden">
+
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-[11px] whitespace-nowrap">
+
+            <table
+                class="w-full text-left border-collapse text-[11px] whitespace-nowrap">
+
                 <thead>
-                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                        <th class="py-2.5 px-3">Reference</th>
-                        <th class="py-2.5 px-3">Amount</th>
-                        <th class="py-2.5 px-3">Phone</th>
-                        <th class="py-2.5 px-3">Type</th>
-                        <th class="py-2.5 px-3">Status</th>
-                        <th class="py-2.5 px-3">Date / Time</th>
+
+                    <tr
+                        class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+
+                        <th class="py-2.5 px-3">
+                            Member
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            MEM NO
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Phone
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Reference
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Type
+                        </th>
+
+                        <th class="py-2.5 px-3 text-right">
+                            Amount
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Status
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Date
+                        </th>
+
+                        <th class="py-2.5 px-3">
+                            Time
+                        </th>
+
                     </tr>
+
                 </thead>
+
+
                 <tbody class="divide-y divide-slate-100 text-slate-700">
-                    @forelse($transactions as $tx)
+
+                    @forelse ($transactions as $tx)
+
+                        @php
+                            $transactionDate = $tx->created_at;
+
+                            $statusClasses = match (strtolower($tx->status)) {
+                                'success' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                'failed' => 'bg-red-50 text-red-700 border-red-200',
+                                'pending' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                default => 'bg-slate-100 text-slate-700 border-slate-200',
+                            };
+                        @endphp
+
+
                         <tr class="hover:bg-slate-50/80 transition">
+
+
+                            <!-- Member -->
                             <td class="py-2 px-3">
-                                <span class="font-mono font-bold text-slate-900">{{ $tx->reference_number ?? '—' }}</span>
+
+                                @if ($tx->user)
+
+                                    <span class="font-semibold text-slate-900">
+
+                                        {{ trim(
+                                            ($tx->user->first_name ?? '') .
+                                            ' ' .
+                                            ($tx->user->last_name ?? '')
+                                        ) }}
+
+                                    </span>
+
+                                @else
+
+                                    <span class="text-slate-400 italic">
+                                        Unknown Member
+                                    </span>
+
+                                @endif
+
                             </td>
-                            <td class="py-2 px-3 font-mono font-bold text-emerald-600">
-                                {{ number_format($tx->amount) }}
+
+
+                            <!-- Membership Number -->
+                            <td
+                                class="py-2 px-3 font-mono font-semibold text-[#2EA3F2]">
+
+                                {{ $tx->user?->membership_number ?? '—' }}
+
                             </td>
-                            <td class="py-2 px-3">
-                                <span class="font-mono text-slate-800">{{ $tx->phone_number }}</span>
+
+
+                            <!-- Phone Used for Payment -->
+                            <td
+                                class="py-2 px-3 font-mono text-slate-600">
+
+                                {{ $tx->phone_number ?: '—' }}
+
                             </td>
-                            <td class="py-2 px-3 uppercase text-[10px] font-semibold text-slate-600">
+
+
+                            <!-- Reference -->
+                            <td
+                                class="py-2 px-3 font-mono font-semibold text-slate-900">
+
+                                {{ $tx->reference_number ?: '—' }}
+
+                            </td>
+
+
+                            <!-- Transaction Type -->
+                            <td
+                                class="py-2 px-3 uppercase text-[9px] font-semibold text-slate-600">
+
                                 {{ str_replace('_', ' ', $tx->type) }}
+
                             </td>
+
+
+                            <!-- Amount -->
+                            <td
+                                class="py-2 px-3 text-right font-mono font-bold text-emerald-600">
+
+                                {{ number_format($tx->amount, 0) }}
+
+                            </td>
+
+
+                            <!-- Status -->
                             <td class="py-2 px-3">
-                                @php
-                                    $statusColors = [
-                                        'success' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                        'pending' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                        'failed' => 'bg-red-50 text-red-700 border-red-200',
-                                    ];
-                                    $badgeClass = $statusColors[$tx->status] ?? 'bg-slate-100 text-slate-700 border-slate-200';
-                                @endphp
-                                <span class="px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider border {{ $badgeClass }}">
+
+                                <span
+                                    class="inline-flex px-1.5 py-0.5 rounded border text-[8px] font-bold uppercase tracking-wider {{ $statusClasses }}">
+
                                     {{ ucfirst($tx->status) }}
+
                                 </span>
+
                             </td>
-                            <td class="py-2 px-3 font-mono text-slate-500 text-[10px]">
-                                {{ $tx->created_at?->format('d-m-y h:i A') }}
+
+
+                            <!-- Date -->
+                            <td
+                                class="py-2 px-3 font-mono text-slate-600">
+
+                                {{ $transactionDate?->format('d-M-y') }}
+
                             </td>
+
+
+                            <!-- Time -->
+                            <td
+                                class="py-2 px-3 font-mono text-slate-600">
+
+                                {{ $transactionDate?->format('H:i:s') }}
+
+                            </td>
+
                         </tr>
+
+
                     @empty
+
                         <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400">No transactions found matching your criteria.</td>
+
+                            <td
+                                colspan="9"
+                                class="py-8 text-center text-slate-400">
+
+                                No transactions found matching your criteria.
+
+                            </td>
+
                         </tr>
+
                     @endforelse
+
                 </tbody>
+
             </table>
+
         </div>
-        
-        <!-- Compact Pagination Footer -->
-        <div class="px-3 py-2.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end text-xs">
+
+
+        <!-- Pagination -->
+        <div
+            class="px-3 py-2.5 border-t border-slate-200 bg-slate-50/50 flex items-center justify-end text-xs">
+
             <div>
                 {{ $transactions->links() }}
             </div>
+
         </div>
+
     </div>
+
 </div>
 
+
 <script>
+
     document.addEventListener('livewire:navigated', () => {
-        if (window.lucide) { window.lucide.createIcons(); }
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
     });
+
+
     document.addEventListener('DOMContentLoaded', () => {
-        if (window.lucide) { window.lucide.createIcons(); }
+
+        if (window.lucide) {
+            window.lucide.createIcons();
+        }
+
     });
+
 </script>

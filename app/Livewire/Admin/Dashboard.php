@@ -40,19 +40,39 @@ class Dashboard extends Component
 
         // Benevolence Cases with total collected & contributor counts
         $benevolenceCases = BenevolenceCase::with(['member', 'category'])
-            ->withCount(['transactions as contributors_count' => function ($query) {
-                $query->where('type', 'benevolence_contribution')->where('status', 'success');
-            }])
-            ->withSum(['transactions as total_collected' => function ($query) {
-                $query->where('type', 'benevolence_contribution')->where('status', 'success');
-            }], 'amount')
+            ->withCount([
+                'transactions as contributors_count' => function ($query) {
+                    $query->where('type', 'benevolence_contribution')
+                        ->where('status', 'success');
+                }
+            ])
+            ->withSum([
+                'transactions as total_collected' => function ($query) {
+                    $query->where('type', 'benevolence_contribution')
+                        ->where('status', 'success');
+                }
+            ], 'amount')
             ->latest()
             ->take(5)
             ->get();
 
-        // Recent Transactions & Ledgers
-        $recentTransactions = Transaction::with('user')->latest()->take(10)->get();
-        $recentLedgers = TransactionLedger::with('user')->latest()->take(10)->get();
+        // Recent Gateway Transactions
+        // Latest 20 transactions with the member who made/is associated with the payment
+        $recentTransactions = Transaction::with('user')
+            ->latest('created_at')
+            ->take(20)
+            ->get()
+            ->each(function ($transaction) {
+                if ($transaction->created_at) {
+                    $transaction->created_at = $transaction->created_at->setTimezone('Africa/Nairobi');
+                }
+            });
+
+        // Recent Transaction Ledgers
+        $recentLedgers = TransactionLedger::with('user')
+            ->latest()
+            ->take(10)
+            ->get();
 
         return view('livewire.admin.dashboard', [
             'totalMembers' => $totalMembers,

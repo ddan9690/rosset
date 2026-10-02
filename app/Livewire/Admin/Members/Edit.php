@@ -58,7 +58,7 @@ class Edit extends Component
             'tsc_number' => 'nullable|string|unique:users,tsc_number,' . $this->user->id,
             'gender' => 'required|in:male,female,other',
             'school' => 'nullable|string|max:255',
-            'school_level' => 'nullable|string|max:100',
+            'school_level' => 'nullable|in:Junior,Senior',
             'status' => 'required|in:active,pending,inactive',
             'registration_fee_paid' => 'boolean',
             'password' => 'nullable|string|min:6',

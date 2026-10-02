@@ -10,17 +10,18 @@ use App\Livewire\Admin\BenevolenceCases\Index as BenevolenceCaseIndex;
 use App\Livewire\Admin\BenevolenceCases\Show as BenevolenceCaseShow;
 use App\Livewire\Admin\BenevolenceCategories;
 use App\Livewire\Admin\Dashboard;
-use App\Livewire\Admin\ManageMembershipRequests; // Updated Admin Import
+use App\Livewire\Admin\ManageMembershipRequests;
 use App\Livewire\Admin\MemberOnboard;
 use App\Livewire\Admin\Members\Create as MemberCreate;
 use App\Livewire\Admin\Members\Edit as MemberEdit;
 use App\Livewire\Admin\Members\Index as MemberIndex;
 use App\Livewire\Admin\Members\Show as MemberShow;
+use App\Livewire\Admin\Roles;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Transactions;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
-use App\Livewire\Auth\MembershipStatus; // Added Unified Status Import
+use App\Livewire\Auth\MembershipStatus;
 use App\Livewire\BenevolenceContribution;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\Updates;
@@ -54,51 +55,112 @@ Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
 
 // Authenticated Routes with Activity Tracking Middleware
 Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
-    Route::get('/membership/status', MembershipStatus::class)->name('membership.status');
-
-    Route::get('/register/fee', RegistrationFee::class)->name('register.fee');
-    Route::get('/portal', Portal::class)->name('portal');
-    Route::get('/portal/solidarity', SolidarityFund::class)->name('member.solidarity');
-    Route::get('/member/profile', MemberProfile::class)->name('profile.update');
     
-    // Member Dependants Route (Aligned name with portal view)
-    Route::get('/member/dependants', MemberDependants::class)->name('member.dependants.update');
+    // Member Portal & Self-Service Routes
+    Route::get('/membership/status', MembershipStatus::class)
+        ->middleware('permission:view membership status')
+        ->name('membership.status');
 
-    // Benevolence Contribution Route using case ID
-    Route::get('/portal/benevolence/contribute/{id}', BenevolenceContribution::class)->name('benevolence.contribute');
+    Route::get('/register/fee', RegistrationFee::class)
+        ->middleware('permission:pay registration fee')
+        ->name('register.fee');
+
+    Route::get('/portal', Portal::class)
+        ->middleware('permission:access portal')
+        ->name('portal');
+
+    Route::get('/portal/solidarity', SolidarityFund::class)
+        ->middleware('permission:view solidarity fund')
+        ->name('member.solidarity');
+
+    Route::get('/member/profile', MemberProfile::class)
+        ->middleware('permission:update profile')
+        ->name('profile.update');
+    
+    Route::get('/member/dependants', MemberDependants::class)
+        ->middleware('permission:update dependants')
+        ->name('member.dependants.update');
+
+    Route::get('/portal/benevolence/contribute/{id}', BenevolenceContribution::class)
+        ->middleware('permission:contribute benevolence')
+        ->name('benevolence.contribute');
 
     // Member PDF Reports Group
     Route::prefix('portal/pdf')->name('portal.pdf.')->group(function () {
-        Route::get('/contributions', [MemberContributionsPdfController::class, 'download'])->name('mycontribtiondowlaod');
+        Route::get('/contributions', [MemberContributionsPdfController::class, 'download'])
+            ->middleware('permission:download member contribution pdfs')
+            ->name('mycontribtiondowlaod');
     });
 
     // Admin Routes
-    Route::get('/dashboard', Dashboard::class)->name('admin.dashboard');
-    Route::get('/admin/benevolence/categories', BenevolenceCategories::class)->name('admin.benevolence.categories');
+    Route::get('/dashboard', Dashboard::class)
+        ->middleware('permission:view dashboard')
+        ->name('admin.dashboard');
+
+    Route::get('/admin/benevolence/categories', BenevolenceCategories::class)
+        ->middleware('permission:manage benevolence categories')
+        ->name('admin.benevolence.categories');
     
-    // Manage Membership Requests Route (Admin)
-    Route::get('/admin/membership-requests', ManageMembershipRequests::class)->name('admin.membership-requests');
+    Route::get('/admin/membership-requests', ManageMembershipRequests::class)
+        ->middleware('permission:manage membership requests')
+        ->name('admin.membership-requests');
 
     // Members Management Routes (CRUD Architecture)
-    Route::get('/admin/members', MemberIndex::class)->name('admin.members');
-    Route::get('/admin/members/create', MemberCreate::class)->name('admin.members.create');
-    Route::get('/admin/members/{id}', MemberShow::class)->name('admin.members.show');
-    Route::get('/admin/members/{id}/edit', MemberEdit::class)->name('admin.members.edit');
+    Route::get('/admin/members', MemberIndex::class)
+        ->middleware('permission:view members')
+        ->name('admin.members');
+
+    Route::get('/admin/members/create', MemberCreate::class)
+        ->middleware('permission:create members')
+        ->name('admin.members.create');
+
+    Route::get('/admin/members/{id}', MemberShow::class)
+        ->middleware('permission:show members')
+        ->name('admin.members.show');
+
+    Route::get('/admin/members/{id}/edit', MemberEdit::class)
+        ->middleware('permission:edit members')
+        ->name('admin.members.edit');
 
     // Benevolence Cases Management Routes
-    Route::get('/admin/benevolence/cases', BenevolenceCaseIndex::class)->name('admin.benevolence.cases.index');
-    Route::get('/admin/benevolence/cases/create', BenevolenceCaseCreate::class)->name('admin.benevolence.cases.create');
-    Route::get('/admin/benevolence/cases/{id}/{slug}/edit', BenevolenceCaseEdit::class)->name('admin.benevolence.cases.edit');
-    Route::get('/admin/benevolence/cases/{id}/{slug}', BenevolenceCaseShow::class)->name('admin.benevolence.cases.show');
+    Route::get('/admin/benevolence/cases', BenevolenceCaseIndex::class)
+        ->middleware('permission:view benevolence cases')
+        ->name('admin.benevolence.cases.index');
+
+    Route::get('/admin/benevolence/cases/create', BenevolenceCaseCreate::class)
+        ->middleware('permission:create benevolence cases')
+        ->name('admin.benevolence.cases.create');
+
+    Route::get('/admin/benevolence/cases/{id}/{slug}/edit', BenevolenceCaseEdit::class)
+        ->middleware('permission:edit benevolence cases')
+        ->name('admin.benevolence.cases.edit');
+
+    Route::get('/admin/benevolence/cases/{id}/{slug}', BenevolenceCaseShow::class)
+        ->middleware('permission:show benevolence cases')
+        ->name('admin.benevolence.cases.show');
 
     // Gateway Transactions Route
-    Route::get('/admin/transactions', Transactions::class)->name('admin.transactions');
+    Route::get('/admin/transactions', Transactions::class)
+        ->middleware('permission:view transactions')
+        ->name('admin.transactions');
 
     // Admin PDF Reports Group
     Route::prefix('admin/pdf')->name('admin.pdf.')->group(function () {
-        Route::get('/transactions', [TransactionsPdfController::class, 'download'])->name('transactions.download');
+        Route::get('/transactions', [TransactionsPdfController::class, 'download'])
+            ->middleware('permission:download admin transaction pdfs')
+            ->name('transactions.download');
     });
 
-    Route::get('/admin/members/onboard', MemberOnboard::class)->name('admin.members.onboard');
-    Route::get('/admin/settings', Settings::class)->name('admin.settings');
+    // System Roles & Settings Routes (Restricted primarily to Super Admin)
+    Route::get('/admin/roles', Roles::class)
+        ->middleware('role:super admin')
+        ->name('admin.roles');
+
+    Route::get('/admin/members/onboard', MemberOnboard::class)
+        ->middleware('permission:onboard members')
+        ->name('admin.members.onboard');
+
+    Route::get('/admin/settings', Settings::class)
+        ->middleware('permission:manage settings')
+        ->name('admin.settings');
 });

@@ -18,7 +18,11 @@ class Transactions extends Component
     public $startDate = '';
     public $endDate = '';
 
-    protected $queryString = ['search', 'startDate', 'endDate'];
+    protected $queryString = [
+        'search',
+        'startDate',
+        'endDate',
+    ];
 
     public function updatingSearch()
     {
@@ -37,7 +41,12 @@ class Transactions extends Component
 
     public function clearFilters()
     {
-        $this->reset(['search', 'startDate', 'endDate']);
+        $this->reset([
+            'search',
+            'startDate',
+            'endDate',
+        ]);
+
         $this->resetPage();
     }
 
@@ -46,8 +55,17 @@ class Transactions extends Component
         $query = Transaction::query()
             ->with('user')
             ->when($this->search, function ($q) {
-                $q->where('reference_number', 'like', '%' . $this->search . '%')
-                  ->orWhere('phone_number', 'like', '%' . $this->search . '%');
+                $search = trim($this->search);
+
+                $q->where(function ($query) use ($search) {
+                    $query->where('reference_number', 'like', '%' . $search . '%')
+                        ->orWhere('phone_number', 'like', '%' . $search . '%')
+                        ->orWhereHas('user', function ($userQuery) use ($search) {
+                            $userQuery->where('membership_number', 'like', '%' . $search . '%')
+                                ->orWhere('first_name', 'like', '%' . $search . '%')
+                                ->orWhere('last_name', 'like', '%' . $search . '%');
+                        });
+                });
             })
             ->when($this->startDate, function ($q) {
                 $q->whereDate('created_at', '>=', $this->startDate);
@@ -56,10 +74,22 @@ class Transactions extends Component
                 $q->whereDate('created_at', '<=', $this->endDate);
             });
 
-        // Calculate total amount based on the current search/date filters
-        $totalTransactedAmount = (clone $query)->where('status', 'success')->sum('amount');
+        // Total successful transaction amount
+        // Uses the same search/date filters currently applied.
+        $totalTransactedAmount = (clone $query)
+            ->where('status', 'success')
+            ->sum('amount');
 
-        $transactions = $query->latest()->paginate(15);
+        // All transactions, paginated
+        $transactions = $query
+            ->latest('created_at')
+            ->paginate(15)
+            ->through(function ($transaction) {
+                if ($transaction->created_at) {
+                    $transaction->created_at = $transaction->created_at->setTimezone('Africa/Nairobi');
+                }
+                return $transaction;
+            });
 
         return view('livewire.admin.transactions', [
             'transactions' => $transactions,

@@ -58,6 +58,10 @@ class User extends Authenticatable
         ];
     }
 
+    /** * User's Solidarity Fund wallet. */ public function solidarityFund()
+    {
+        return $this->hasOne(SolidarityFund::class, 'user_id');
+    }
     /**
      * Activate the user after a successful registration fee payment 
      * and assign the next sequential membership number if not already present.
@@ -71,14 +75,14 @@ class User extends Authenticatable
 
         // Determine membership number only if not already assigned
         $membershipNumber = $this->membership_number;
-        
+
         if (!$membershipNumber) {
             // Find the maximum existing membership number numerically from the database
             $lastMembershipNumber = self::max(DB::raw('CAST(membership_number AS UNSIGNED)'));
-            
+
             // If prior members exist, increment the highest number; otherwise start at 1
-            $nextNumber = $lastMembershipNumber ? $lastMembershipNumber + 1 : 1; 
-            
+            $nextNumber = $lastMembershipNumber ? $lastMembershipNumber + 1 : 1;
+
             $membershipNumber = (string) $nextNumber;
         }
 

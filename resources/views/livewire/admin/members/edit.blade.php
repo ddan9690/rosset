@@ -13,10 +13,10 @@
     <!-- Form Card -->
     <form wire:submit="update" class="bg-white rounded-xl shadow-xs border border-slate-200 p-6 space-y-4 text-xs">
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <!-- Membership Number -->
+            <!-- Membership Number (Disabled) -->
             <div>
                 <label class="block font-medium text-slate-700 mb-1">Membership Number</label>
-                <input type="text" wire:model="membership_number" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900">
+                <input type="text" wire:model="membership_number" disabled class="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-100 text-slate-500 cursor-not-allowed">
                 @error('membership_number') <span class="text-red-600 text-[10px] mt-1 block">{{ $message }}</span> @enderror
             </div>
 
@@ -84,7 +84,11 @@
             <!-- School Level -->
             <div>
                 <label class="block font-medium text-slate-700 mb-1">School Level</label>
-                <input type="text" wire:model="school_level" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900">
+                <select wire:model="school_level" class="w-full px-3 py-2 border border-slate-200 rounded-lg focus:outline-none focus:border-slate-900 bg-white">
+                    <option value="">Select School Level</option>
+                    <option value="Junior">Junior</option>
+                    <option value="Senior">Senior</option>
+                </select>
                 @error('school_level') <span class="text-red-600 text-[10px] mt-1 block">{{ $message }}</span> @enderror
             </div>
 
