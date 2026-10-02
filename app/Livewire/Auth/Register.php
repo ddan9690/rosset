@@ -105,6 +105,9 @@ class Register extends Component
                     'password' => Hash::make($this->password),
                 ]);
 
+                // Automatically assign the default 'member' role
+                $user->assignRole('member');
+
                 MembershipRequest::create([
                     'user_id' => $user->id,
                     'status' => 'pending',
