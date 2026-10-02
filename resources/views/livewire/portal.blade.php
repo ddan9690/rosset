@@ -259,7 +259,7 @@
                 </div>
 
 
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
 
                     @forelse($benevolenceCases as $case)
                         <div
@@ -267,10 +267,10 @@
 
                             <!-- Case Number Banner Header -->
 
-                            <div class="bg-slate-900 text-white px-4 py-2.5 text-center">
+                            <div class="bg-slate-900 text-white px-2 sm:px-4 py-2 text-center">
 
-                                <span class="font-mono text-xs font-bold text-slate-100 tracking-wide uppercase">
-                                    CASE NUMBER : {{ $case->case_number }}
+                                <span class="font-mono text-[10px] sm:text-xs font-bold text-slate-100 tracking-wide uppercase truncate block">
+                                    CASE : {{ $case->case_number }}
                                 </span>
 
                             </div>
@@ -278,15 +278,15 @@
 
                             <!-- Card Body -->
 
-                            <div class="p-5 space-y-3 text-xs flex-1">
+                            <div class="p-3 sm:p-5 space-y-2 sm:space-y-3 text-[11px] sm:text-xs flex-1">
 
-                                <div class="flex justify-between items-start border-b border-slate-100 pb-2.5">
+                                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b border-slate-100 pb-2 gap-0.5 sm:gap-2">
 
                                     <span class="text-slate-500 font-medium">
                                         Affected Member:
                                     </span>
 
-                                    <span class="font-bold text-slate-900 text-right">
+                                    <span class="font-bold text-slate-900 sm:text-right">
 
                                         {{ trim(
                                             ($case->member->salutation ?? '') .
@@ -301,10 +301,10 @@
                                 </div>
 
 
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
 
                                     <span class="text-slate-500 font-medium">
-                                        Membership Number:
+                                        Member No:
                                     </span>
 
                                     <span class="font-mono font-semibold text-slate-800">
@@ -316,14 +316,14 @@
                                 </div>
 
 
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
 
                                     <span class="text-slate-500 font-medium">
-                                        Benevolence Category:
+                                        Category:
                                     </span>
 
                                     <span
-                                        class="inline-flex px-2 py-0.5 rounded text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 uppercase">
+                                        class="inline-flex px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 uppercase">
 
                                         {{ $case->category->name ?? 'Benevolence' }}
 
@@ -332,23 +332,23 @@
                                 </div>
 
 
-                                <div class="space-y-1 border-b border-slate-100 pb-2.5">
+                                <div class="space-y-1 border-b border-slate-100 pb-2">
 
                                     <span class="text-slate-500 font-medium block">
                                         Case Details:
                                     </span>
 
                                     <p
-                                        class="text-slate-700 italic bg-slate-50 p-2 rounded text-[11px] leading-relaxed">
+                                        class="text-slate-700 italic bg-slate-50 p-1.5 sm:p-2 rounded text-[10px] sm:text-[11px] leading-relaxed">
 
-                                        "{{ $case->case_details }}"
+                                        {{ $case->case_details }}
 
                                     </p>
 
                                 </div>
 
 
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2.5">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
 
                                     <span class="text-slate-500 font-medium">
                                         Deadline:
@@ -363,10 +363,10 @@
                                 </div>
 
 
-                                <div class="flex justify-between items-center pt-1">
+                                <div class="flex justify-between items-center pt-0.5">
 
                                     <span class="text-slate-500 font-medium">
-                                        Contribution Amount:
+                                        Amount:
                                     </span>
 
                                     <span class="font-mono font-bold text-slate-900">
@@ -382,15 +382,15 @@
 
                             <!-- Send Contribution Action Footer -->
 
-                            <div class="p-4 bg-slate-50 border-t border-slate-100">
+                            <div class="p-2.5 sm:p-4 bg-slate-50 border-t border-slate-100">
 
                                 @if ($case->contribution_made)
                                     <!-- SUCCESSFUL CONTRIBUTION -->
 
                                     <button type="button" disabled
-                                        class="w-full py-2.5 px-4 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-xs uppercase tracking-wider flex items-center justify-center space-x-1.5 cursor-not-allowed">
+                                        class="w-full py-2 px-2 sm:px-4 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-[10px] sm:text-xs uppercase tracking-wider flex items-center justify-center space-x-1 cursor-not-allowed">
 
-                                        <i data-lucide="check-circle-2" class="w-3.5 h-3.5 text-emerald-600"></i>
+                                        <i data-lucide="check-circle-2" class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600"></i>
 
                                         <span>
                                             Contributed
@@ -403,12 +403,12 @@
                                     <button type="button" wire:click="sendContribution({{ $case->id }})"
                                         wire:loading.attr="disabled"
                                         wire:target="sendContribution({{ $case->id }})"
-                                        class="w-full py-2.5 px-4 rounded-lg text-white font-bold text-xs transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1.5 uppercase tracking-wider">
+                                        class="w-full py-2 px-2 sm:px-4 rounded-lg text-white font-bold text-[10px] sm:text-xs transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1 uppercase tracking-wider">
 
-                                        <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                                        <i data-lucide="send" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></i>
 
                                         <span wire:loading.remove wire:target="sendContribution({{ $case->id }})">
-                                            Send Contribution
+                                            Contribute
                                         </span>
 
                                         <span wire:loading wire:target="sendContribution({{ $case->id }})">

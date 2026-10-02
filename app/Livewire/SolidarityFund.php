@@ -22,6 +22,7 @@ class SolidarityFund extends Component
     public $phone = '';
     public $defaultPhone = '';
     public $showTopUpModal = false;
+    public $showInfoModal = false;
     public $isPhoneEditable = false;
 
     public $stkSent = false;
@@ -62,10 +63,11 @@ class SolidarityFund extends Component
     public function topUpWallet(KcbPaymentService $paymentService)
     {
         $this->validate([
-            'amount' => 'required|integer|min:2',
+            'amount' => 'required|integer|min:2|max:1000',
             'phone' => ['required', 'string', 'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/'],
         ], [
             'amount.min' => 'The minimum top-up amount is Ksh 2.',
+            'amount.max' => 'The maximum top-up amount is Ksh 1,000.',
             'phone.regex' => 'Please enter a valid M-Pesa phone number format.',
         ]);
 

@@ -3,9 +3,13 @@
 
         <!-- Navigation Bar -->
         <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-3 shadow-2xs">
-            <a href="{{ route('portal') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1">
-                <span>&larr; Back to Portal</span>
-            </a>
+            @if(!$stkSent)
+                <a href="{{ route('portal') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1">
+                    <span>&larr; Back to Portal</span>
+                </a>
+            @else
+                <span class="text-xs font-bold text-slate-400">Transaction in Progress...</span>
+            @endif
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Member Solidarity Fund</span>
         </div>
 
@@ -35,25 +39,23 @@
             </div>
         @endif
 
-        <!-- Summary Cards Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <!-- Summary Card Grid (Single Available Balance Card) -->
+        <div class="grid grid-cols-1 gap-4">
             <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs flex items-center justify-between">
                 <div>
-                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Available Balance</p>
-                    <h3 class="text-2xl font-extrabold text-slate-900 font-mono mt-1">KES {{ number_format($wallet->balance, 2) }}</h3>
+                    <div class="flex items-center space-x-2">
+                        <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Available Balance</p>
+                        <span class="text-slate-300">•</span>
+                        <button type="button" wire:click="$set('showInfoModal', true)" class="text-[11px] font-bold text-[#2EA3F2] hover:underline cursor-pointer">
+                            What is solidarity fund?
+                        </button>
+                    </div>
+                    <h3 class="text-2xl font-extrabold text-slate-900 font-mono mt-1">KSH {{ number_format($wallet->balance, 0) }}</h3>
                 </div>
                 <button wire:click="openTopUpModal" class="px-4 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-xs bg-[#2EA3F2] hover:bg-sky-500 cursor-pointer flex items-center space-x-1">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
                     <span>Top-up</span>
                 </button>
-            </div>
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lifetime Top-ups</p>
-                <h3 class="text-2xl font-extrabold text-emerald-600 font-mono mt-1">KES {{ number_format($wallet->total_topups, 2) }}</h3>
-            </div>
-            <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-xs">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Lifetime Deductions</p>
-                <h3 class="text-2xl font-extrabold text-red-600 font-mono mt-1">KES {{ number_format($wallet->total_deductions, 2) }}</h3>
             </div>
         </div>
 
@@ -67,7 +69,6 @@
                     <thead>
                         <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase font-bold text-[10px] tracking-wider">
                             <th class="py-3 px-4">Reference Number</th>
-                            <th class="py-3 px-4">Description</th>
                             <th class="py-3 px-4">Amount</th>
                             <th class="py-3 px-4">Status</th>
                             <th class="py-3 px-4">Date Paid</th>
@@ -77,8 +78,7 @@
                         @forelse($statements as $tx)
                             <tr class="hover:bg-slate-50 transition">
                                 <td class="py-3 px-4 font-mono font-bold text-slate-900">{{ $tx->reference_number }}</td>
-                                <td class="py-3 px-4">{{ $tx->description }}</td>
-                                <td class="py-3 px-4 font-mono font-bold text-emerald-600">+ KES {{ number_format($tx->amount, 2) }}</td>
+                                <td class="py-3 px-4 font-mono font-bold text-emerald-600">{{ number_format($tx->amount, 0) }}</td>
                                 <td class="py-3 px-4">
                                     <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
                                         {{ ucfirst($tx->status) }}
@@ -90,7 +90,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="py-8 text-center text-slate-400">No wallet top-up transactions found in your statement yet.</td>
+                                <td colspan="4" class="py-8 text-center text-slate-400">No wallet top-up transactions found in your statement yet.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -100,6 +100,41 @@
                 {{ $statements->links() }}
             </div>
         </div>
+
+        <!-- ================= WHAT IS SOLIDARITY FUND MODAL ================= -->
+        @if(isset($showInfoModal) && $showInfoModal)
+            <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs px-4">
+                <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6">
+                    <div class="flex items-center justify-between border-b border-slate-200 pb-4">
+                        <h3 class="font-bold text-sm uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                            <i data-lucide="info" class="w-4 h-4 text-[#2EA3F2]"></i>
+                            About Solidarity Fund
+                        </h3>
+                        <button type="button" wire:click="$set('showInfoModal', false)" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
+                    </div>
+
+                    <div class="space-y-3 text-xs text-slate-600 leading-relaxed">
+                        <p>
+                            The <strong>Solidarity Fund</strong> is a virtual wallet designed for your convenience. It allows funds to be deducted automatically whenever bereavement cases arise, saving you from the hassle of paying for each case individually.
+                        </p>
+                        <p>
+                            You never have to worry about defaulting or forgetting to contribute. Just top up your solidarity fund and let your benevolence obligations be debited seamlessly.
+                        </p>
+                        <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 text-amber-900 space-y-1">
+                            <p class="font-bold uppercase text-[10px] tracking-wide text-amber-800">Please Note:</p>
+                            <p>• The maximum balance a member can hold in the fund is <strong>KSH 1,000</strong>.</p>
+                            <p>• The solidarity fund is <strong>non-withdrawable</strong>.</p>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="button" wire:click="$set('showInfoModal', false)" class="px-5 py-2.5 rounded-lg bg-[#2EA3F2] text-white font-bold text-xs uppercase tracking-wider hover:bg-sky-500 transition cursor-pointer shadow-xs">
+                            Got It
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
 
         <!-- ================= TOP-UP MODAL ================= -->
         @if($showTopUpModal)
@@ -117,8 +152,8 @@
                         </p>
 
                         <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Amount (KES)</label>
-                            <input type="number" wire:model="amount" placeholder="e.g. 500" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none bg-white">
+                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Amount (KSH)</label>
+                            <input type="number" wire:model="amount" max="1000" placeholder="e.g. 500" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none bg-white">
                             @error('amount') <span class="text-red-500 text-[10px] mt-1 block">{{ $message }}</span> @enderror
                         </div>
 
@@ -134,7 +169,6 @@
                         </div>
 
                         <div class="flex items-center justify-end space-x-3 pt-2">
-                            <!-- Cancel Button now disabled when topUpWallet is processing -->
                             <button type="button" wire:click="closeModal" wire:loading.attr="disabled" wire:target="topUpWallet" class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
                                 Cancel
                             </button>
@@ -162,13 +196,17 @@
 
     window.addEventListener('stk-sent', event => {
         const detail = event.detail?.[0] ?? event.detail ?? {};
+        const formattedAmount = Number(detail.amount ?? 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
+
         Swal.fire({ 
             title: 'STK Push Sent!', 
-            text: 'Please check your phone (' + (detail.phone ?? '') + ') and enter your M-Pesa PIN to complete the top-up.', 
+            html: 'Check your phone (<strong>' + (detail.phone ?? '') + '</strong>) and enter your M-Pesa PIN to complete the top-up.<br><br>' +
+                  '<div style="background-color: #fef3c7; border: 1px solid #fde68a; padding: 10px; border-radius: 6px; text-align: left; font-size: 13px; color: #92400e;">' +
+                  '<strong>Please Note:</strong> This process may take up to <strong>40 seconds</strong>. Please be patient, and <strong>do not close or refresh this page</strong>.' +
+                  '</div>',
             icon: 'info', 
             showConfirmButton: false, 
-            allowOutsideClick: false,
-            timerProgressBar: true 
+            allowOutsideClick: false
         });
     });
 

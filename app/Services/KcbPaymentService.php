@@ -75,11 +75,6 @@ class KcbPaymentService
                     'grant_type' => 'client_credentials',
                 ]);
 
-            Log::info('KCB Token Response', [
-                'status' => $response->status(),
-                'body' => $response->json(),
-            ]);
-
             if (!$response->successful()) {
                 Log::error('KCB Token Generation Failed', [
                     'status' => $response->status(),
@@ -103,8 +98,6 @@ class KcbPaymentService
         } catch (\Throwable $e) {
             Log::error('KCB Token Generation Exception', [
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
             return null;
@@ -112,7 +105,7 @@ class KcbPaymentService
     }
 
     /**
-     * Send KCB STK Push.
+     * Send KCB STK Push with duplicate pending guard and user-friendly messages.
      */
     public function stkPush(
         string $phone,
@@ -124,12 +117,33 @@ class KcbPaymentService
         ?string $caseNumber = null
     ): array {
         try {
+            // Guard: Prevent sending a new STK push if an active pending transaction already exists
+            if ($userId && $caseNumber) {
+                $existingPending = Transaction::where('user_id', $userId)
+                    ->where('case_number', $caseNumber)
+                    ->where('status', 'pending')
+                    ->where('created_at', '>=', now()->subMinutes(2))
+                    ->first();
+
+                if ($existingPending) {
+                    Log::warning('KCB STK Push Blocked: Active Pending Transaction Exists', [
+                        'user_id' => $userId,
+                        'case_number' => $caseNumber,
+                    ]);
+
+                    return [
+                        'success' => false,
+                        'message' => 'Payment not successful. Try again in a moment.',
+                    ];
+                }
+            }
+
             $token = $this->generateToken();
 
             if (!$token) {
                 return [
                     'success' => false,
-                    'message' => 'Unable to authenticate with KCB.',
+                    'message' => 'Payment not successful. Try again in a moment.',
                 ];
             }
 
@@ -165,11 +179,6 @@ class KcbPaymentService
 
             $responseData = $response->json();
 
-            Log::info('KCB STK Push Response', [
-                'status' => $response->status(),
-                'body' => $responseData,
-            ]);
-
             if (!$response->successful()) {
                 Log::error('KCB STK Push HTTP Error', [
                     'status' => $response->status(),
@@ -178,7 +187,7 @@ class KcbPaymentService
 
                 return [
                     'success' => false,
-                    'message' => 'KCB STK request failed: ' . data_get($responseData, 'header.statusDescription', 'Invalid Request'),
+                    'message' => 'Payment not successful. Try again in a moment.',
                     'response' => $responseData,
                 ];
             }
@@ -198,29 +207,14 @@ class KcbPaymentService
             if (!$checkoutRequestId) {
                 Log::error('KCB STK Push Missing CheckoutRequestID', [
                     'response' => $responseData,
-                    'invoice_number' => $invoiceNumber,
                 ]);
 
                 return [
                     'success' => false,
-                    'message' => 'KCB did not return a CheckoutRequestID.',
+                    'message' => 'Payment not successful. Try again in a moment.',
                     'response' => $responseData,
                 ];
             }
-
-            Cache::put(
-                'kcb_payment_' . $checkoutRequestId,
-                [
-                    'user_id' => $userId,
-                    'type' => $transactionType,
-                    'case_number' => $caseNumber,
-                    'phone_number' => $phone,
-                    'amount' => $amount,
-                    'invoice_number' => $invoiceNumber,
-                    'merchant_request_id' => $merchantRequestId,
-                ],
-                now()->addHours(24)
-            );
 
             Transaction::create([
                 'user_id' => $userId,
@@ -238,7 +232,7 @@ class KcbPaymentService
 
             return [
                 'success' => true,
-                'message' => 'STK Push sent successfully.',
+                'message' => 'STK push sent! Please check your phone and enter your PIN to complete the payment.',
                 'checkout_request_id' => $checkoutRequestId,
                 'merchant_request_id' => $merchantRequestId,
                 'invoice_number' => $invoiceNumber,
@@ -247,26 +241,21 @@ class KcbPaymentService
         } catch (\Throwable $e) {
             Log::error('KCB STK Push Exception', [
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
             return [
                 'success' => false,
-                'message' => 'An error occurred while sending the STK Push.',
-                'error' => $e->getMessage(),
+                'message' => 'Payment not successful. Try again in a moment.',
             ];
         }
     }
 
     /**
-     * Process KCB IPN callback.
+     * Process KCB IPN callback with cleanup of older pending attempts.
      */
     public function processIpnNotification(array $data): array
     {
-        Log::info('KCB IPN Processing Started', [
-            'payload' => $data,
-        ]);
+        Log::info('KCB IPN Processing Started', ['payload' => $data]);
 
         try {
             $stkCallback =
@@ -276,10 +265,6 @@ class KcbPaymentService
                 ?? $data;
 
             if (!is_array($stkCallback)) {
-                Log::error('KCB IPN Invalid Callback Structure', [
-                    'payload' => $data,
-                ]);
-
                 return [
                     'success' => false,
                     'message' => 'Invalid KCB callback structure.',
@@ -295,88 +280,21 @@ class KcbPaymentService
 
             $checkoutRequestId =
                 data_get($stkCallback, 'CheckoutRequestID')
-                ?? data_get($stkCallback, 'checkoutRequestID')
-                ?? data_get($stkCallback, 'CheckoutRequestId');
-
-            $merchantRequestId =
-                data_get($stkCallback, 'MerchantRequestID')
-                ?? data_get($stkCallback, 'merchantRequestID')
-                ?? data_get($stkCallback, 'MerchantRequestId');
+                ?? data_get($stkCallback, 'checkoutRequestID');
 
             if (!$checkoutRequestId) {
-                Log::error('KCB IPN Missing Checkout Request ID', [
-                    'payload' => $data,
-                ]);
-
                 return [
                     'success' => false,
                     'message' => 'CheckoutRequestID missing from KCB callback.',
                 ];
             }
 
-            $items = data_get($stkCallback, 'CallbackMetadata.Item')
-                ?? data_get($stkCallback, 'callbackMetadata.Item')
-                ?? [];
+            $transaction = Transaction::where('checkout_request_id', $checkoutRequestId)->first();
 
-            if (!is_array($items)) {
-                $items = [];
-            }
-
-            $metadata = [];
-            foreach ($items as $item) {
-                if (!is_array($item)) {
-                    continue;
-                }
-                $name = $item['Name'] ?? null;
-                if ($name) {
-                    $metadata[$name] = $item['Value'] ?? null;
-                }
-            }
-
-            $amount = $metadata['Amount'] ?? null;
-            $receiptNumber = $metadata['MpesaReceiptNumber']
-                ?? $metadata['M-PesaReceiptNumber']
-                ?? $metadata['ReceiptNumber']
-                ?? null;
-
-            $transactionDate = $metadata['TransactionDate'] ?? null;
-            $phoneNumber = $metadata['PhoneNumber'] ?? null;
-
-            $transaction = Transaction::where(
-                'checkout_request_id',
-                $checkoutRequestId
-            )->first();
-
-            $cachedData = Cache::get('kcb_payment_' . $checkoutRequestId);
-            $userId = $cachedData['user_id'] ?? null;
-            $transactionType = $cachedData['type'] ?? null;
-            $caseNumber = $cachedData['case_number'] ?? null;
-
-            if (!$merchantRequestId) {
-                $merchantRequestId = $cachedData['merchant_request_id'] ?? null;
-            }
-
-            if ($transaction) {
-                $userId = $userId ?? $transaction->user_id;
-                $transactionType = $transactionType ?? $transaction->type;
-                $caseNumber = $caseNumber ?? $transaction->case_number;
-            }
-
-            if (!$transaction || !$userId) {
-                Log::error('KCB IPN Unable To Resolve Transaction/User', [
+            if (!$transaction) {
+                Log::error('KCB IPN Transaction Not Found in Database', [
                     'checkout_request_id' => $checkoutRequestId,
-                    'merchant_request_id' => $merchantRequestId,
-                    'transaction_exists' => (bool) $transaction,
-                    'user_id' => $userId,
-                    'payload' => $data,
                 ]);
-
-                if ($transaction) {
-                    $transaction->update([
-                        'status' => 'failed',
-                        'gateway_response' => $data,
-                    ]);
-                }
 
                 return [
                     'success' => false,
@@ -384,18 +302,35 @@ class KcbPaymentService
                 ];
             }
 
+            $items = data_get($stkCallback, 'CallbackMetadata.Item')
+                ?? data_get($stkCallback, 'callbackMetadata.Item')
+                ?? [];
+
+            $metadata = [];
+            if (is_array($items)) {
+                foreach ($items as $item) {
+                    if (is_array($item) && isset($item['Name'])) {
+                        $metadata[$item['Name']] = $item['Value'] ?? null;
+                    }
+                }
+            }
+
+            $amount = $metadata['Amount'] ?? $transaction->amount;
+            $receiptNumber = $metadata['MpesaReceiptNumber']
+                ?? $metadata['M-PesaReceiptNumber']
+                ?? $metadata['ReceiptNumber']
+                ?? null;
+
+            $phoneNumber = $metadata['PhoneNumber'] ?? $transaction->phone_number;
+
             if ((int) $resultCode === 0) {
                 DB::transaction(function () use (
                     $transaction,
                     $data,
-                    $userId,
-                    $transactionType,
-                    $caseNumber,
                     $amount,
                     $receiptNumber,
                     $phoneNumber,
-                    $checkoutRequestId,
-                    $merchantRequestId
+                    $checkoutRequestId
                 ) {
                     $lockedTransaction = Transaction::where(
                         'id',
@@ -409,25 +344,10 @@ class KcbPaymentService
                     }
 
                     if ($lockedTransaction->status === 'success') {
-                        Log::info('KCB IPN Already Processed', [
-                            'transaction_id' => $lockedTransaction->id,
-                            'checkout_request_id' => $checkoutRequestId,
-                            'merchant_request_id' => $merchantRequestId,
-                        ]);
-
-                        if (empty($lockedTransaction->gateway_response)) {
-                            $lockedTransaction->update([
-                                'gateway_response' => $data,
-                            ]);
-                        }
-
                         return;
                     }
 
-                    $finalAmount = $amount !== null
-                        ? (float) $amount
-                        : (float) $lockedTransaction->amount;
-
+                    $finalAmount = (float) $amount;
                     $finalPhone = $phoneNumber ?: $lockedTransaction->phone_number;
                     $ledgerReference = $receiptNumber ?: 'KCB-' . $checkoutRequestId;
 
@@ -436,7 +356,7 @@ class KcbPaymentService
                             'reference' => $ledgerReference,
                         ],
                         [
-                            'user_id' => $userId,
+                            'user_id' => $lockedTransaction->user_id,
                             'amount' => $finalAmount,
                             'type' => 'credit',
                             'channel' => 'KCB Paybill / STK IPN',
@@ -457,30 +377,34 @@ class KcbPaymentService
                         'paid_at' => now(),
                     ]);
 
+                    // Clean up: Mark any other older pending transactions for this user and case as failed
+                    if ($lockedTransaction->case_number) {
+                        Transaction::where('user_id', $lockedTransaction->user_id)
+                            ->where('case_number', $lockedTransaction->case_number)
+                            ->where('id', '!=', $lockedTransaction->id)
+                            ->where('status', 'pending')
+                            ->update([
+                                'status' => 'failed',
+                                'gateway_response' => ['note' => 'Superseded by successful transaction ID ' . $lockedTransaction->id],
+                            ]);
+                    }
+
+                    $userId = $lockedTransaction->user_id;
+                    $transactionType = $lockedTransaction->type;
+
                     if ($transactionType === 'registration_fee') {
                         $user = User::find($userId);
-
-                        if ($user) {
+                        if ($user && method_exists($user, 'activateAfterPayment')) {
                             $user->activateAfterPayment();
                         }
-
-                        Log::info('KCB Registration Fee Updated', [
-                            'user_id' => $userId,
-                            'transaction_id' => $lockedTransaction->id,
-                            'membership_number' => $user->membership_number ?? null,
-                        ]);
                     } elseif ($transactionType === 'wallet_topup') {
                         $user = User::find($userId);
-
-                        if ($user) {
-                            $wallet = method_exists($user, 'solidarityFund')
-                                ? $user->solidarityFund()->first()
-                                : null;
-
+                        if ($user && method_exists($user, 'solidarityFund')) {
+                            $wallet = $user->solidarityFund()->first();
                             if ($wallet) {
                                 $wallet->increment('balance', $finalAmount);
                                 $wallet->increment('total_topups', $finalAmount);
-                            } elseif (method_exists($user, 'solidarityFund')) {
+                            } else {
                                 $user->solidarityFund()->create([
                                     'balance' => $finalAmount,
                                     'total_topups' => $finalAmount,
@@ -488,19 +412,6 @@ class KcbPaymentService
                                 ]);
                             }
                         }
-
-                        Log::info('KCB Wallet Topup Processed', [
-                            'user_id' => $userId,
-                            'amount' => $finalAmount,
-                            'transaction_id' => $lockedTransaction->id,
-                        ]);
-                    } elseif ($transactionType === 'benevolence_contribution') {
-                        Log::info('KCB Benevolence Contribution Processed', [
-                            'user_id' => $userId,
-                            'case_number' => $caseNumber,
-                            'amount' => $finalAmount,
-                            'transaction_id' => $lockedTransaction->id,
-                        ]);
                     }
                 });
 
@@ -516,12 +427,6 @@ class KcbPaymentService
                     'gateway_response' => $data,
                 ]);
 
-                Log::warning('KCB Payment Failed Callback', [
-                    'checkout_request_id' => $checkoutRequestId,
-                    'result_code' => $resultCode,
-                    'result_desc' => $resultDesc,
-                ]);
-
                 return [
                     'success' => false,
                     'message' => $resultDesc,
@@ -530,8 +435,6 @@ class KcbPaymentService
         } catch (\Throwable $e) {
             Log::error('KCB IPN Processing Exception', [
                 'message' => $e->getMessage(),
-                'file' => $e->getFile(),
-                'line' => $e->getLine(),
             ]);
 
             return [
@@ -550,10 +453,5 @@ class KcbPaymentService
         }
 
         return $phone;
-    }
-
-    protected function generateInvoiceNumber(): string
-    {
-        return 'INV-' . strtoupper(Str::random(10));
     }
 }
