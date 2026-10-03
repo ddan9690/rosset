@@ -78,7 +78,12 @@ class Register extends Component
             'last_name' => 'required|string|max:255',
             'salutation' => 'required|in:Mr.,Mrs.',
             'gender' => 'required|in:male,female',
-            'phone' => ['required', 'string', 'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/'],
+            'phone' => [
+                'required', 
+                'string', 
+                'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/', 
+                'unique:users,phone'
+            ],
             'tsc_number' => 'required|string|unique:users,tsc_number',
             'id_number' => 'required|string|unique:users,id_number',
             'school_level' => 'required|string',
@@ -88,6 +93,7 @@ class Register extends Component
             'profile_picture' => 'nullable|image|max:2048', // Max 2MB image validation
         ], [
             'phone.regex' => 'Please enter a valid phone number format.',
+            'phone.unique' => 'Phone number already in use',
         ]);
 
         try {

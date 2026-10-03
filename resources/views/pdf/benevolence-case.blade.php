@@ -2,7 +2,7 @@
 <html>
 <head>
     <meta charset="utf-8">
-    <title>Member Contributions Report</title>
+    <title>Benevolence Case Report - {{ $case->case_number }}</title>
     <style>
         body {
             font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
@@ -48,7 +48,7 @@
             text-transform: uppercase;
             letter-spacing: 1px;
         }
-        /* Professional Member Details Box */
+        /* Professional Meta Info Box */
         .meta-box {
             background-color: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -67,6 +67,26 @@
         }
         .meta-table td strong {
             color: #0f172a;
+        }
+        /* Summary Statistics Block */
+        .stats-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .stats-table td {
+            background-color: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            padding: 8px;
+            text-align: center;
+            font-size: 9px;
+            width: 25%;
+        }
+        .stats-table td strong {
+            display: block;
+            font-size: 11px;
+            color: #0f172a;
+            margin-top: 2px;
         }
         /* Data Table Styling */
         .data-table {
@@ -118,66 +138,103 @@
             <img src="{{ public_path('images/logo.png') }}" alt="ROSSET-SWA Logo">
             <h1>Rongo Sub County Teachers Welfare Association</h1>
             <h2>(ROSSET-SWA)</h2>
-            <p>Member Benevolence Contributions Report</p>
+            <p>Benevolence Case Report &amp; Contribution Summary</p>
         </div>
 
-        <!-- Member Details Box (Single Row Layout) -->
+        <!-- Case Metadata Box -->
         <div class="meta-box">
             <table class="meta-table">
                 <tr>
-                    <td style="width: 45%;"><strong>Name:</strong> {{ $memberName }}</td>
-                    <td style="width: 30%;"><strong>Membership No:</strong> {{ $membershipNumber }}</td>
-                    <td style="width: 25%;"><strong>TSC No:</strong> {{ $tscNumber }}</td>
+                    <td style="width: 50%;"><strong>Case No:</strong> {{ $case->case_number }}</td>
+                    <td style="width: 50%;"><strong>Category:</strong> {{ $case->category?->name ?? 'N/A' }}</td>
+                </tr>
+                <tr>
+                    <td>
+                        <strong>Affected Member:</strong> 
+                        {{ 
+                            trim(
+                                optional($case->member)->salutation . ' ' . 
+                                optional($case->member)->first_name . ' ' . 
+                                optional($case->member)->last_name
+                            ) ?: 'N/A' 
+                        }}
+                    </td>
+                    <td>
+                        <strong>Member / TSC No:</strong> 
+                        {{ optional($case->member)->tsc_number ?? optional($case->member)->membership_number ?? 'N/A' }}
+                    </td>
+                </tr>
+                <tr>
+                    <td><strong>Status:</strong> {{ ucfirst($case->status) }}</td>
+                    <td><strong>Date Logged:</strong> {{ $case->created_at ? $case->created_at->setTimezone('Africa/Nairobi')->format('d-m-Y g:i a') : 'N/A' }}</td>
                 </tr>
             </table>
         </div>
 
-        <!-- Contribution History Table -->
+        <!-- Summary Statistics Row -->
+        <table class="stats-table">
+            <tr>
+                <td>
+                    Total Collected
+                    <strong>KSH {{ number_format($totalAmountCollected) }}</strong>
+                </td>
+                <td>
+                    Contributors
+                    <strong>{{ $totalContributorsCount }} / {{ $totalSystemMembers }} ({{ $contributionPercentage }}%)</strong>
+                </td>
+                <td>
+                    Target Amount
+                    <strong>KSH {{ number_format($case->target_amount ?? 0) }}</strong>
+                </td>
+                <td>
+                    Case Progress
+                    <strong>{{ $case->target_amount > 0 ? round(($totalAmountCollected / $case->target_amount) * 100, 1) : 0 }}%</strong>
+                </td>
+            </tr>
+        </table>
+
+        <!-- Contributions History Table -->
         <table class="data-table">
             <thead>
                 <tr>
                     <th style="width: 25px;" class="text-center">#</th>
                     <th>Date</th>
-                    <th>Case No.</th>
-                    <th>Affected Member Name</th>
-                    <th>Affected Member No.</th>
-                    <th>Amount</th>
+                    <th>Contributor Name</th>
+                    <th>Membership / TSC No.</th>
+                    <th>Amount (Ksh)</th>
                     <th>Payment Channel</th>
                     <th>Reference</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($contributionHistory as $index => $contribution)
+                @forelse($contributions as $index => $contribution)
                     <tr>
                         <td class="text-center">{{ $index + 1 }}</td>
                         <td>{{ $contribution->created_at ? $contribution->created_at->setTimezone('Africa/Nairobi')->format('d-m-Y g:i a') : 'N/A' }}</td>
-                        <td>{{ $contribution->benevolenceCase?->case_number ?? 'N/A' }}</td>
                         <td>
-                            {{
+                            {{ 
                                 trim(
-                                    optional($contribution->benevolenceCase?->member)->salutation . ' ' .
-                                    optional($contribution->benevolenceCase?->member)->first_name . ' ' .
-                                    optional($contribution->benevolenceCase?->member)->last_name
-                                ) ?: 'N/A'
+                                    optional($contribution->user)->salutation . ' ' . 
+                                    optional($contribution->user)->first_name . ' ' . 
+                                    optional($contribution->user)->last_name
+                                ) ?: 'N/A' 
                             }}
                         </td>
                         <td>
-                            {{
-                                optional($contribution->benevolenceCase?->member)->tsc_number
-                                ??
-                                optional($contribution->benevolenceCase?->member)->membership_number
-                                ??
-                                'N/A'
+                            {{ 
+                                optional($contribution->user)->tsc_number 
+                                ?? optional($contribution->user)->membership_number 
+                                ?? 'N/A' 
                             }}
                         </td>
-                        <td>KSH {{ number_format($contribution->amount ?? 0) }}</td>
+                        <td>{{ number_format($contribution->amount ?? 0) }}</td>
                         <td>{{ $contribution->payment_channel ?? 'N/A' }}</td>
                         <td>{{ $contribution->reference_number ?? 'N/A' }}</td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="text-center" style="color: #64748b; padding: 20px;">
-                            No contribution records found.
+                        <td colspan="7" class="text-center" style="color: #64748b; padding: 20px;">
+                            No contribution records found for this case.
                         </td>
                     </tr>
                 @endforelse

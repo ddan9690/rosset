@@ -38,9 +38,9 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit benevolence cases',
             'show benevolence cases',
 
-            // Transactions & Financial Reports (Admin)
+            // Transactions & Administrative Reports
             'view transactions',
-            'download admin transaction pdfs',
+            'download reports', // Single unified permission for administrative downloads/reports
 
             // System Settings (Technical / Super Admin level)
             'manage settings',
@@ -53,7 +53,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'update profile',
             'update dependants',
             'contribute benevolence',
-            'download member contribution pdfs',
+            'download member reports', 
         ];
 
         foreach ($permissions as $permission) {
@@ -82,14 +82,15 @@ class RolesAndPermissionsSeeder extends Seeder
             'edit benevolence cases',
             'show benevolence cases',
             'view transactions',
-            'download admin transaction pdfs',
-            // Portal access if they also participate as members
+            'download reports',
+           
             'access portal',
             'view membership status',
             'view solidarity fund',
+            'download member reports',
         ]);
 
-        // Member: Standard portal and self-service permissions
+      
         $memberRole = Role::firstOrCreate(['name' => 'member']);
         $memberRole->givePermissionTo([
             'access portal',
@@ -99,7 +100,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'update profile',
             'update dependants',
             'contribute benevolence',
-            'download member contribution pdfs',
+            'download member reports', 
         ]);
     }
 }

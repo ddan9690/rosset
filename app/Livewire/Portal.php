@@ -4,7 +4,7 @@ namespace App\Livewire;
 
 use App\Models\SolidarityFund;
 use App\Models\BenevolenceCase;
-use App\Models\Transaction;
+use App\Models\BenevolenceContribution;
 use App\Models\MembershipRequest;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -93,23 +93,19 @@ class Portal extends Component
             ->oldest('created_at')
             ->get()
             ->map(function ($case) use ($user) {
-                $case->contribution_made = Transaction::query()
+                // Check if a contribution record already exists for this user and case
+                $case->contribution_made = BenevolenceContribution::query()
                     ->where('user_id', $user->id)
-                    ->where('case_number', $case->case_number)
-                    ->where('type', 'benevolence_contribution')
-                    ->where('status', 'success')
+                    ->where('benevolence_case_id', $case->id)
                     ->exists();
 
                 return $case;
             });
 
-        $contributionHistory = Transaction::query()
+        $contributionHistory = BenevolenceContribution::query()
             ->with(['benevolenceCase.member'])
             ->where('user_id', $user->id)
-            ->where('type', 'benevolence_contribution')
-            ->where('status', 'success')
-            ->whereNotNull('paid_at')
-            ->latest('paid_at')
+            ->latest('created_at')
             ->get();
 
         return view('livewire.portal', [

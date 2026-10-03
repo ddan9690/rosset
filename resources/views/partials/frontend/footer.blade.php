@@ -12,17 +12,19 @@
         <div>
             <h4 class="font-semibold text-sm mb-4 tracking-wider uppercase" style="color: #2EA3F2;">Quick Links</h4>
             <ul class="space-y-2.5 text-sm text-slate-300">
-                <li><a href="{{ url('/') }}" wire:navigate class="hover:text-white transition">Home</a></li>
+                <li><a href="{{ route('home') }}" wire:navigate class="hover:text-white transition">Home</a></li>
                 <li><a href="#about" class="hover:text-white transition">Who We Are</a></li>
                 <li><a href="#support" class="hover:text-white transition">Standing Together</a></li>
-                <li><a href="{{ url('/updates') }}" wire:navigate class="hover:text-white transition">Notices & Updates</a></li>
+                <li><a href="{{ route('updates') }}" wire:navigate class="hover:text-white transition">Notices & Updates</a></li>
+                <li><a href="{{ route('privacy-policy') }}" wire:navigate class="hover:text-white transition">Privacy Policy</a></li>
+                <li><a href="{{ route('terms-and-conditions') }}" wire:navigate class="hover:text-white transition">Terms & Conditions</a></li>
             </ul>
         </div>
         <div>
             <h4 class="font-semibold text-sm mb-4 tracking-wider uppercase" style="color: #2EA3F2;">Member Services</h4>
             <ul class="space-y-2.5 text-sm text-slate-300">
-                <li><a href="/login" wire:navigate class="hover:text-white transition">Member Portal Login</a></li>
-                <li><a href="/register" wire:navigate class="hover:text-white transition">Join Hands With Us</a></li>
+                <li><a href="{{ route('login') }}" wire:navigate class="hover:text-white transition">Member Portal Login</a></li>
+                <li><a href="{{ route('register') }}" wire:navigate class="hover:text-white transition">Join Hands With Us</a></li>
                 <li><a href="#support" class="hover:text-white transition">Welfare Benefits</a></li>
             </ul>
         </div>

@@ -16,6 +16,10 @@
                 <button type="button" wire:click="openStatusModal('closed')" class="px-3 py-2 rounded-lg bg-slate-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-500 transition cursor-pointer">Close</button>
             @endif
 
+            <a href="{{ route('admin.pdf.benevolence-case', [$case->id, $case->slug]) }}" target="_blank" class="px-3.5 py-2 rounded-lg bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider hover:bg-emerald-600 transition flex items-center space-x-1">
+                <span>PDF Report</span>
+            </a>
+
             <a href="{{ route('admin.benevolence.cases.edit', [$case->id, $case->slug]) }}" wire:navigate class="px-3.5 py-2 rounded-lg bg-[#2EA3F2] text-white font-bold text-xs uppercase tracking-wider hover:bg-sky-500 transition">Edit</a>
             <a href="{{ route('admin.benevolence.cases.index') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:underline px-2">&larr; Back</a>
         </div>
@@ -145,25 +149,25 @@
                         <th class="py-3 px-4">Membership No</th>
                         <th class="py-3 px-4">Date & Time</th>
                         <th class="py-3 px-4">Transaction Ref</th>
-                        <th class="py-3 px-4">Phone Number</th>
+                        <th class="py-3 px-4">Payment Channel</th>
                         <th class="py-3 px-4">Amount</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-slate-700">
-                    @forelse($contributions as $tx)
+                    @forelse($contributions as $contribution)
                         <tr class="hover:bg-slate-50 transition">
                             <td class="py-3 px-4 font-bold text-slate-900">
-                                {{ $tx->user->first_name ?? '' }} {{ $tx->user->last_name ?? '' }}
+                                {{ $contribution->user->first_name ?? '' }} {{ $contribution->user->last_name ?? '' }}
                             </td>
                             <td class="py-3 px-4 font-mono text-slate-600">
-                                {{ $tx->user->membership_number ?? 'N/A' }}
+                                {{ $contribution->user->membership_number ?? 'N/A' }}
                             </td>
                             <td class="py-3 px-4 font-mono text-slate-500">
-                                {{ $tx->paid_at ? $tx->paid_at->format('Y-m-d H:i') : $tx->created_at->format('Y-m-d H:i') }}
+                                {{ $contribution->created_at ? $contribution->created_at->format('Y-m-d H:i') : 'N/A' }}
                             </td>
-                            <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ $tx->reference_number }}</td>
-                            <td class="py-3 px-4 font-mono text-slate-600">{{ $tx->phone_number }}</td>
-                            <td class="py-3 px-4 font-mono font-bold text-emerald-600">KES {{ number_format($tx->amount, 2) }}</td>
+                            <td class="py-3 px-4 font-mono font-bold text-slate-800">{{ $contribution->reference_number ?? 'N/A' }}</td>
+                            <td class="py-3 px-4 font-medium text-slate-700">{{ $contribution->payment_channel ?? 'N/A' }}</td>
+                            <td class="py-3 px-4 font-mono font-bold text-emerald-600">KES {{ number_format($contribution->amount ?? 0, 2) }}</td>
                         </tr>
                     @empty
                         <tr>

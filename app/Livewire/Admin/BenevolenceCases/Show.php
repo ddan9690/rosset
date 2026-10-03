@@ -3,7 +3,7 @@
 namespace App\Livewire\Admin\BenevolenceCases;
 
 use App\Models\BenevolenceCase;
-use App\Models\Transaction;
+use App\Models\BenevolenceContribution;
 use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -70,12 +70,10 @@ class Show extends Component
 
     public function render()
     {
-        // Fetch all successful transactions for this case
-        $contributions = Transaction::where('type', 'benevolence_contribution')
-            ->where('case_number', $this->case->case_number)
-            ->where('status', 'success')
+        // Fetch all contributions for this case using benevolence_case_id
+        $contributions = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
             ->with('user')
-            ->latest('paid_at')
+            ->latest('created_at')
             ->get();
 
         // Total unique contributors

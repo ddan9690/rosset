@@ -2,11 +2,14 @@
 
 namespace App\Livewire\Frontend;
 
+use Livewire\Attributes\Layout;
+use Livewire\Attributes\Title;
 use Livewire\Component;
 
+#[Layout('layouts.app')]
+#[Title('ROSSET-SWA | Rongo Sub County Secondary Teachers Social Welfare Association')]
 class Home extends Component
 {
-    
     public bool $showWelcomeBanner = true;
 
     public function dismissBanner()
@@ -16,10 +19,6 @@ class Home extends Component
 
     public function render()
     {
-        return view('livewire.frontend.home')
-            ->layout('layouts.app', [
-                'title' => 'ROSSET-SWA | Rongu Sub County Secondary Teachers Social Welfare Association',
-                'metaDescription' => 'Official platform for the Rongu Sub County Secondary Teachers Social Welfare Association. Empowering secondary educators through mutual welfare support, financial transparency via KCB paybill, and educational innovation.'
-            ]);
+        return view('livewire.frontend.home');
     }
 }

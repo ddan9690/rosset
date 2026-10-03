@@ -2,6 +2,8 @@
 
 namespace App\Services;
 
+use App\Models\BenevolenceCase;
+use App\Models\BenevolenceContribution;
 use App\Models\Transaction;
 use App\Models\TransactionLedger;
 use App\Models\User;
@@ -347,7 +349,7 @@ class KcbPaymentService
                         return;
                     }
 
-                    $finalAmount = (float) $amount;
+                    $finalAmount = (int) $amount; // Matched to full integer amount columns
                     $finalPhone = $phoneNumber ?: $lockedTransaction->phone_number;
                     $ledgerReference = $receiptNumber ?: 'KCB-' . $checkoutRequestId;
 
@@ -376,6 +378,27 @@ class KcbPaymentService
                         'gateway_response' => $data,
                         'paid_at' => now(),
                     ]);
+
+                    // Automatically record the contribution if this transaction is tied to a benevolence case
+                    if ($lockedTransaction->case_number && $lockedTransaction->type === 'benevolence_contribution') {
+                        $benevolenceCase = BenevolenceCase::where('case_number', $lockedTransaction->case_number)->first();
+
+                        if ($benevolenceCase) {
+                            BenevolenceContribution::updateOrCreate(
+                                [
+                                    'transaction_id' => $lockedTransaction->id,
+                                ],
+                                [
+                                    'benevolence_case_id' => $benevolenceCase->id,
+                                    'user_id' => $lockedTransaction->user_id,
+                                    'amount' => $finalAmount,
+                                    'payment_channel' => 'MPESA Prompt',
+                                    'reference_number' => $receiptNumber ?: ('KCB-' . $checkoutRequestId),
+                                    'notes' => 'Paid via MPESA Prompt',
+                                ]
+                            );
+                        }
+                    }
 
                     // Clean up: Mark any other older pending transactions for this user and case as failed
                     if ($lockedTransaction->case_number) {

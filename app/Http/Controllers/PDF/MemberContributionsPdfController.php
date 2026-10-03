@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\PDF;
 
 use App\Http\Controllers\Controller;
-use App\Models\Transaction;
+use App\Models\BenevolenceContribution;
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -32,13 +32,10 @@ class MemberContributionsPdfController extends Controller
         $membershipNumber = !empty($user->membership_number) ? $user->membership_number : '-';
         $tscNumber = !empty($user->tsc_number) ? $user->tsc_number : '-';
 
-        $contributionHistory = Transaction::query()
+        $contributionHistory = BenevolenceContribution::query()
             ->with(['benevolenceCase.member'])
             ->where('user_id', $user->id)
-            ->where('type', 'benevolence_contribution')
-            ->where('status', 'success')
-            ->whereNotNull('paid_at')
-            ->latest('paid_at')
+            ->latest('created_at')
             ->get();
 
         $data = [
