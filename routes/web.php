@@ -24,6 +24,7 @@ use App\Livewire\Auth\Login;
 use App\Livewire\Auth\Register;
 use App\Livewire\Auth\MembershipStatus;
 use App\Livewire\BenevolenceContribution;
+use App\Livewire\Constitution;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\PrivacyPolicy;
 use App\Livewire\Frontend\TermsAndConditions;
@@ -37,6 +38,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', Home::class)->name('home');
+Route::get('/constitution', Constitution::class)->name('constitution');
 Route::get('/updates', Updates::class)->name('updates');
 Route::get('/privacy-policy', PrivacyPolicy::class)->name('privacy-policy');
 Route::get('/terms-and-conditions', TermsAndConditions::class)->name('terms-and-conditions');
@@ -93,7 +95,7 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     // Member PDF Reports Group
     Route::prefix('portal/pdf')->name('portal.pdf.')->group(function () {
         Route::get('/contributions', [MemberContributionsPdfController::class, 'download'])
-            ->middleware('permission:download member reports') // <-- Updated to use member report permission
+            ->middleware('permission:download member reports')
             ->name('mycontribtiondowlaod');
     });
 
@@ -152,11 +154,11 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     // Admin PDF Reports Group
     Route::prefix('admin/pdf')->name('admin.pdf.')->group(function () {
         Route::get('/transactions', [TransactionsPdfController::class, 'download'])
-            ->middleware('permission:download reports') // <-- Updated to use generic admin download reports permission
+            ->middleware('permission:download reports')
             ->name('transactions.download');
 
         Route::get('/benevolence/cases/{id}/{slug}', [BenevolenceCasePdfController::class, 'download'])
-            ->middleware('permission:download reports') // <-- Updated to use generic admin download reports permission
+            ->middleware('permission:download reports')
             ->name('benevolence-case');
     });
 
