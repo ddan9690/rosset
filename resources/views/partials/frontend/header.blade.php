@@ -16,6 +16,7 @@
             <a href="{{ url('/') }}#about" class="text-slate-600 hover:text-[#0E3A59] transition">Who We Are</a>
             <a href="{{ url('/') }}#support" class="text-slate-600 hover:text-[#0E3A59] transition">Standing Together</a>
             <a href="{{ url('/') }}#stories" class="text-slate-600 hover:text-[#0E3A59] transition">Brotherhood & Sisterhood</a>
+            <a href="{{ url('/constitution') }}" wire:navigate class="text-slate-600 hover:text-slate-900 transition">Constitution</a>
             <a href="{{ url('/updates') }}" wire:navigate class="text-slate-600 hover:text-slate-900 transition">Notices & Updates</a>
         </nav>
 
@@ -51,6 +52,7 @@
         <a href="{{ url('/') }}#about" @click="mobileMenuOpen = false" class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Who We Are</a>
         <a href="{{ url('/') }}#support" @click="mobileMenuOpen = false" class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Standing Together</a>
         <a href="{{ url('/') }}#stories" @click="mobileMenuOpen = false" class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Brotherhood & Sisterhood</a>
+        <a href="{{ url('/constitution') }}" wire:navigate class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Constitution</a>
         <a href="{{ url('/updates') }}" wire:navigate class="block px-3 py-2 rounded font-medium text-slate-700 hover:bg-slate-50">Notices & Updates</a>
 
         <div class="pt-4 border-t border-slate-100 flex flex-col space-y-2">
