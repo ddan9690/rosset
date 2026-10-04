@@ -9,10 +9,13 @@ use App\Models\MembershipRequest;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Portal extends Component
 {
+    use WithPagination;
+
     public $title = 'Member Portal | ROSSET-SWA';
     public $memberName = '';
     public $membershipNumber = '';
@@ -20,6 +23,20 @@ class Portal extends Component
     public $isRegistrationPaid = false;
     public $isProfileComplete = false;
     public $solidarityBalance = 0;
+
+    // Search and Sort properties for Benevolence Cases
+    public $search = '';
+    public $sortBy = 'deadline_soonest'; // options: deadline_soonest, deadline_latest, newest, oldest
+
+    public function updatingSearch()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingSortBy()
+    {
+        $this->resetPage();
+    }
 
     public function mount()
     {
@@ -88,19 +105,45 @@ class Portal extends Component
     {
         $user = Auth::user();
 
-        $activeCases = BenevolenceCase::with(['member', 'category'])
-            ->where('status', 'active')
-            ->oldest('created_at')
-            ->get()
-            ->map(function ($case) use ($user) {
-                // Check if a contribution record already exists for this user and case
-                $case->contribution_made = BenevolenceContribution::query()
-                    ->where('user_id', $user->id)
-                    ->where('benevolence_case_id', $case->id)
-                    ->exists();
+        // Build Query for Benevolence Cases with Search & Sorting
+        $query = BenevolenceCase::with(['member', 'category']);
 
-                return $case;
+        // Search filter (Case Number or Member's First/Last Name)
+        if (!empty($this->search)) {
+            $searchTerm = trim($this->search);
+            $query->where(function ($q) use ($searchTerm) {
+                $q->where('case_number', 'like', "%{$searchTerm}%")
+                  ->orWhereHas('member', function ($memberQuery) use ($searchTerm) {
+                      $memberQuery->where('first_name', 'like', "%{$searchTerm}%")
+                                  ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                                  ->orWhere('tsc_number', 'like', "%{$searchTerm}%")
+                                  ->orWhere('membership_number', 'like', "%{$searchTerm}%");
+                  });
             });
+        }
+
+        // Sorting configuration
+        if ($this->sortBy === 'deadline_soonest') {
+            // Null deadlines pushed to the bottom, earliest deadline first
+            $query->orderByRaw('CASE WHEN deadline IS NULL THEN 1 ELSE 0 END')
+                  ->orderBy('deadline', 'asc');
+        } elseif ($this->sortBy === 'deadline_latest') {
+            $query->orderBy('deadline', 'desc');
+        } elseif ($this->sortBy === 'oldest') {
+            $query->orderBy('created_at', 'asc');
+        } else {
+            // Default: newest created first
+            $query->orderBy('created_at', 'desc');
+        }
+
+        $benevolenceCases = $query->paginate(6)->through(function ($case) use ($user) {
+            $case->contribution_made = BenevolenceContribution::query()
+                ->where('user_id', $user->id)
+                ->where('benevolence_case_id', $case->id)
+                ->exists();
+
+            return $case;
+        });
 
         $contributionHistory = BenevolenceContribution::query()
             ->with(['benevolenceCase.member'])
@@ -109,7 +152,7 @@ class Portal extends Component
             ->get();
 
         return view('livewire.portal', [
-            'benevolenceCases' => $activeCases,
+            'benevolenceCases' => $benevolenceCases,
             'contributionHistory' => $contributionHistory,
         ]);
     }

@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 py-8">
+<div class="min-h-screen bg-slate-50 py-8" x-data="{ showModal: false, modalTitle: '', modalDetails: '' }">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         <!-- Top Navigation Bar -->
@@ -169,118 +169,153 @@
 
             <!-- ================= BENEVOLENCE CASES SECTION ================= -->
             <div class="space-y-4">
-                <div class="border-b border-slate-200 pb-3 text-center">
+                <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">
                         ROSSET-SWA BENEVOLENCE CASES
                     </h2>
+
+                    <!-- Search and Filter Bar -->
+                    <div class="flex items-center space-x-2 w-full sm:w-auto">
+                        <div class="relative flex-1 sm:w-64">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                                <i data-lucide="search" class="w-3.5 h-3.5"></i>
+                            </span>
+                            <input type="text" wire:model.live.debounce.300ms="search"
+                                placeholder="Search case no. or member..."
+                                class="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-hidden focus:ring-1 focus:ring-slate-900">
+                        </div>
+
+                        <div class="relative">
+                            <select wire:model.live="sortBy"
+                                class="py-1.5 px-3 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-700 focus:outline-hidden focus:ring-1 focus:ring-slate-900 cursor-pointer">
+                                <option value="deadline_soonest">Deadline: Soonest First</option>
+                                <option value="deadline_latest">Deadline: Latest First</option>
+                                <option value="newest">Newest Created</option>
+                                <option value="oldest">Oldest Created</option>
+                            </select>
+                        </div>
+                    </div>
                 </div>
 
-                <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @forelse($benevolenceCases as $case)
                         <div
-                            class="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs flex flex-col justify-between transition hover:shadow-md">
-                            <div class="bg-slate-900 text-white px-2 sm:px-4 py-2 text-center">
-                                <span
-                                    class="font-mono text-[10px] sm:text-xs font-bold text-slate-100 tracking-wide uppercase truncate block">
-                                    CASE : {{ $case->case_number }}
+                            class="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs flex flex-col justify-between transition hover:shadow-sm">
+                            
+                            <!-- Card Header -->
+                            <div class="bg-slate-900 text-white px-3 py-1.5 flex items-center justify-between">
+                                <span class="font-mono text-[10px] font-bold text-slate-100 uppercase tracking-wide">
+                                    {{ $case->case_number }}
+                                </span>
+                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider
+                                    @if($case->status === 'active') bg-emerald-500 text-white
+                                    @elseif($case->status === 'closed') bg-slate-600 text-slate-200
+                                    @else bg-amber-500 text-white @endif">
+                                    {{ $case->status }}
                                 </span>
                             </div>
 
-                            <div class="p-3 sm:p-5 space-y-2 sm:space-y-3 text-[11px] sm:text-xs flex-1">
-                                <div
-                                    class="flex flex-col sm:flex-row sm:justify-between sm:items-start border-b border-slate-100 pb-2 gap-0.5 sm:gap-2">
-                                    <span class="text-slate-500 font-medium">
-                                        Affected Member:
-                                    </span>
-                                    <span class="font-bold text-slate-900 sm:text-right">
-                                        {{ trim(
-                                            ($case->member->salutation ?? '') .
-                                                ' ' .
-                                                ($case->member->first_name ?? '') .
-                                                ' ' .
-                                                ($case->member->last_name ?? ''),
-                                        ) }}
+                            <!-- Card Body (Compact) -->
+                            <div class="p-3 space-y-1.5 text-[11px] flex-1">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-1">
+                                    <span class="text-slate-500">Affected Member:</span>
+                                    <span class="font-bold text-slate-900 truncate max-w-[160px]">
+                                        {{ trim(($case->member->salutation ?? '') . ' ' . ($case->member->first_name ?? '') . ' ' . ($case->member->last_name ?? '')) }}
                                     </span>
                                 </div>
 
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                                    <span class="text-slate-500 font-medium">
-                                        Member No:
-                                    </span>
-                                    <span class="font-mono font-semibold text-slate-800">
-                                        {{ $case->member->tsc_number ?? ($case->member->membership_number ?? 'N/A') }}
-                                    </span>
-                                </div>
-
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                                    <span class="text-slate-500 font-medium">
-                                        Category:
-                                    </span>
-                                    <span
-                                        class="inline-flex px-1.5 sm:px-2 py-0.5 rounded text-[9px] sm:text-[10px] font-semibold bg-amber-50 text-amber-800 border border-amber-200 uppercase">
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-1">
+                                    <span class="text-slate-500">Category:</span>
+                                    <span class="font-semibold text-slate-700 uppercase">
                                         {{ $case->category->name ?? 'Benevolence' }}
                                     </span>
                                 </div>
 
-                                <div class="space-y-1 border-b border-slate-100 pb-2">
-                                    <span class="text-slate-500 font-medium block">
-                                        Case Details:
-                                    </span>
-                                    <p
-                                        class="text-slate-700 italic bg-slate-50 p-1.5 sm:p-2 rounded text-[10px] sm:text-[11px] leading-relaxed">
-                                        {{ $case->case_details }}
-                                    </p>
-                                </div>
-
-                                <div class="flex justify-between items-center border-b border-slate-100 pb-2">
-                                    <span class="text-slate-500 font-medium">
-                                        Deadline:
-                                    </span>
+                                <div class="flex justify-between items-center border-b border-slate-100 pb-1">
+                                    <span class="text-slate-500">Deadline:</span>
                                     <span class="font-mono font-semibold text-red-600">
                                         {{ $case->deadline ? \Carbon\Carbon::parse($case->deadline)->format('d-m-Y') : 'N/A' }}
                                     </span>
                                 </div>
 
-                                <div class="flex justify-between items-center pt-0.5">
-                                    <span class="text-slate-500 font-medium">
-                                        Amount:
-                                    </span>
+                                <div class="flex justify-between items-center pb-0.5">
+                                    <span class="text-slate-500">Amount:</span>
                                     <span class="font-mono font-bold text-slate-900">
                                         KSH {{ number_format($case->category->amount ?? 0) }}
                                     </span>
                                 </div>
+
+                                <!-- View Details Link Triggering Modal -->
+                                <div class="pt-1 text-right">
+                                    <button type="button" 
+                                        @click="showModal = true; modalTitle = 'Case: {{ $case->case_number }}'; modalDetails = @js($case->case_details);"
+                                        class="text-[10px] font-bold text-[#0E3A59] hover:underline inline-flex items-center space-x-1 cursor-pointer">
+                                        <i data-lucide="eye" class="w-3 h-3"></i>
+                                        <span>View Details</span>
+                                    </button>
+                                </div>
                             </div>
 
-                            <div class="p-2.5 sm:p-4 bg-slate-50 border-t border-slate-100">
-                                @if ($case->contribution_made)
+                            <!-- Card Footer Action Buttons -->
+                            <div class="p-2 bg-slate-50 border-t border-slate-100">
+                                @if (in_array($case->status, ['closed', 'suspended']))
                                     <button type="button" disabled
-                                        class="w-full py-2 px-2 sm:px-4 rounded-lg text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-[10px] sm:text-xs uppercase tracking-wider flex items-center justify-center space-x-1 cursor-not-allowed">
-                                        <i data-lucide="check-circle-2"
-                                            class="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-600"></i>
+                                        class="w-full py-1.5 px-3 rounded text-slate-400 bg-slate-100 border border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center space-x-1 cursor-not-allowed">
+                                        <i data-lucide="ban" class="w-3 h-3"></i>
+                                        <span>{{ ucfirst($case->status) }} (Disabled)</span>
+                                    </button>
+                                @elseif ($case->contribution_made)
+                                    <button type="button" disabled
+                                        class="w-full py-1.5 px-3 rounded text-emerald-700 bg-emerald-50 border border-emerald-200 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center space-x-1 cursor-not-allowed">
+                                        <i data-lucide="check-circle-2" class="w-3 h-3 text-emerald-600"></i>
                                         <span>Contributed</span>
                                     </button>
                                 @else
                                     <button type="button" wire:click="sendContribution({{ $case->id }})"
                                         wire:loading.attr="disabled"
-                                        wire:target="sendContribution({{ $case->id }})"
-                                        class="w-full py-2 px-2 sm:px-4 rounded-lg text-white font-bold text-[10px] sm:text-xs transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1 uppercase tracking-wider">
-                                        <i data-lucide="send" class="w-3 h-3 sm:w-3.5 sm:h-3.5"></i>
-                                        <span wire:loading.remove wire:target="sendContribution({{ $case->id }})">
-                                            Contribute
-                                        </span>
-                                        <span wire:loading wire:target="sendContribution({{ $case->id }})">
-                                            Redirecting...
-                                        </span>
+                                        class="w-full py-1.5 px-3 rounded text-white font-bold text-[10px] transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1 uppercase tracking-wider">
+                                        <i data-lucide="send" class="w-3 h-3"></i>
+                                        <span wire:loading.remove wire:target="sendContribution({{ $case->id }})">Contribute</span>
+                                        <span wire:loading wire:target="sendContribution({{ $case->id }})">Redirecting...</span>
                                     </button>
                                 @endif
                             </div>
+
                         </div>
                     @empty
-                        <div
-                            class="col-span-full py-12 text-center bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
-                            There are currently no active benevolence cases requiring contributions.
+                        <div class="col-span-full py-12 text-center bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
+                            There are currently no benevolence cases matching your criteria.
                         </div>
                     @endforelse
+                </div>
+
+                <!-- Pagination Links -->
+                @if ($benevolenceCases->hasPages())
+                    <div class="pt-4">
+                        {{ $benevolenceCases->links() }}
+                    </div>
+                @endif
+            </div>
+
+            <!-- ================= CASE DETAILS MODAL ================= -->
+            <div x-cloak x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                <div @click.away="showModal = false" class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider" x-text="modalTitle"></h3>
+                        <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 cursor-pointer">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="space-y-2">
+                        <p class="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg leading-relaxed" x-text="modalDetails"></p>
+                    </div>
+
+                    <div class="pt-2 text-right">
+                        <button @click="showModal = false" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-800 cursor-pointer">
+                            Close
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -304,98 +339,63 @@
                             <table class="w-full text-left">
                                 <thead class="bg-slate-50 border-b border-slate-200">
                                     <tr>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Date
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Case Number
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Affected Member Name
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Affected Member Number
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Amount
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Payment Channel
-                                        </th>
-                                        <th
-                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-                                            Reference
-                                        </th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Date</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Case Number</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Affected Member Name</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Affected Member Number</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Amount</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Payment Channel</th>
+                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Reference</th>
                                     </tr>
                                 </thead>
 
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach ($contributionHistory as $contribution)
                                         <tr class="hover:bg-slate-50 transition">
-                                            <!-- DATE -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-semibold text-slate-800 font-mono">
                                                     {{ $contribution->created_at->setTimezone('Africa/Nairobi')->format('d-m-Y g:i a') }}
                                                 </span>
                                             </td>
 
-                                            <!-- CASE NUMBER -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 @if ($contribution->benevolenceCase?->case_number)
-                                                    <span
-                                                        class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
                                                         {{ $contribution->benevolenceCase->case_number }}
                                                     </span>
                                                 @else
-                                                    <span class="text-xs text-slate-400">
-                                                        N/A
-                                                    </span>
+                                                    <span class="text-xs text-slate-400">N/A</span>
                                                 @endif
                                             </td>
 
-                                            <!-- AFFECTED MEMBER NAME -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-semibold text-slate-800">
                                                     {{ trim(
-                                                        optional($contribution->benevolenceCase?->member)->salutation .
-                                                            ' ' .
-                                                            optional($contribution->benevolenceCase?->member)->first_name .
-                                                            ' ' .
-                                                            optional($contribution->benevolenceCase?->member)->last_name,
-                                                    ) ?:
-                                                        'N/A' }}
+                                                        optional($contribution->benevolenceCase?->member)->salutation . ' ' .
+                                                        optional($contribution->benevolenceCase?->member)->first_name . ' ' .
+                                                        optional($contribution->benevolenceCase?->member)->last_name
+                                                    ) ?: 'N/A' }}
                                                 </span>
                                             </td>
 
-                                            <!-- AFFECTED MEMBER NUMBER -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-mono font-semibold text-slate-700">
-                                                    {{ optional($contribution->benevolenceCase?->member)->tsc_number ??
-                                                        (optional($contribution->benevolenceCase?->member)->membership_number ?? 'N/A') }}
+                                                    {{ optional($contribution->benevolenceCase?->member)->tsc_number ?? (optional($contribution->benevolenceCase?->member)->membership_number ?? 'N/A') }}
                                                 </span>
                                             </td>
 
-                                            <!-- AMOUNT -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-mono font-bold text-slate-900">
                                                     KSH {{ number_format($contribution->amount ?? 0) }}
                                                 </span>
                                             </td>
 
-                                            <!-- PAYMENT CHANNEL -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-medium text-slate-700">
                                                     {{ $contribution->payment_channel ?? 'N/A' }}
                                                 </span>
                                             </td>
 
-                                            <!-- REFERENCE -->
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-mono font-bold text-slate-700">
                                                     {{ $contribution->reference_number ?? 'N/A' }}
@@ -408,13 +408,10 @@
                         </div>
                     @else
                         <div class="py-12 px-6 text-center">
-                            <div
-                                class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
+                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
                                 <i data-lucide="receipt" class="w-5 h-5 text-slate-400"></i>
                             </div>
-                            <p class="text-xs font-semibold text-slate-600">
-                                No contribution record
-                            </p>
+                            <p class="text-xs font-semibold text-slate-600">No contribution record</p>
                         </div>
                     @endif
                 </div>
