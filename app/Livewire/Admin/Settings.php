@@ -17,9 +17,11 @@ class Settings extends Component
     public $registration_fee;
     public $agm_contribution_fee;
     public $late_registration_waiting_period_days;
+    public $defaulting_waiting_period_days;
     
-    // For date combination conversion
-    public $deadline_date; 
+    // Separated deadline properties
+    public $registration_deadline_month;
+    public $registration_deadline_day;
 
     public function edit($field)
     {
@@ -27,19 +29,13 @@ class Settings extends Component
         $settings = Setting::first();
 
         if ($field === 'deadline') {
-            // Combine month and day into YYYY-MM-DD for date input (defaulting to current year 2026)
-            if ($settings && $settings->registration_deadline_month && $settings->registration_deadline_day) {
-                $year = date('Y');
-                $month = str_pad($settings->registration_deadline_month, 2, '0', STR_PAD_LEFT);
-                $day = str_pad($settings->registration_deadline_day, 2, '0', STR_PAD_LEFT);
-                $this->deadline_date = "{$year}-{$month}-{$day}";
-            } else {
-                $this->deadline_date = null;
-            }
+            $this->registration_deadline_month = $settings?->registration_deadline_month ?? 2;
+            $this->registration_deadline_day = $settings?->registration_deadline_day ?? 28;
         } else {
-            $this->registration_fee = $settings ? $settings->registration_fee : null;
-            $this->agm_contribution_fee = $settings ? $settings->agm_contribution_fee : null;
-            $this->late_registration_waiting_period_days = $settings ? $settings->late_registration_waiting_period_days : null;
+            $this->registration_fee = $settings?->registration_fee;
+            $this->agm_contribution_fee = $settings?->agm_contribution_fee;
+            $this->late_registration_waiting_period_days = $settings?->late_registration_waiting_period_days;
+            $this->defaulting_waiting_period_days = $settings?->defaulting_waiting_period_days;
         }
         
         $this->resetErrorBag();
@@ -51,22 +47,36 @@ class Settings extends Component
         $this->resetErrorBag();
     }
 
+    // Helper to get maximum days in a given month (ignoring leap year or using standard max days)
+    public function getMaxDaysProperty()
+    {
+        $month = (int) ($this->registration_deadline_month ?? 2);
+        // Using 2024 as a leap year fallback so February can safely show up to 29 if needed, or 28
+        return cal_days_in_month(CAL_GREGORIAN, $month, 2024);
+    }
+
+    public function updatedRegistrationDeadlineMonth($value)
+    {
+        // Reset or cap day if it exceeds the new month's maximum days
+        $maxDays = cal_days_in_month(CAL_GREGORIAN, (int) $value, 2024);
+        if ($this->registration_deadline_day > $maxDays) {
+            $this->registration_deadline_day = $maxDays;
+        }
+    }
+
     public function updateSetting($field)
     {
         if ($field === 'deadline') {
             $this->validate([
-                'deadline_date' => 'required|date'
+                'registration_deadline_month' => 'required|integer|between:1,12',
+                'registration_deadline_day' => 'required|integer|between:1,31',
             ]);
-
-            $timestamp = strtotime($this->deadline_date);
-            $month = date('n', $timestamp);
-            $day = date('j', $timestamp);
 
             Setting::updateOrCreate(
                 ['id' => 1],
                 [
-                    'registration_deadline_month' => $month,
-                    'registration_deadline_day' => $day,
+                    'registration_deadline_month' => $this->registration_deadline_month,
+                    'registration_deadline_day' => $this->registration_deadline_day,
                 ]
             );
         } else {
@@ -74,6 +84,7 @@ class Settings extends Component
                 'registration_fee' => 'required|integer|min:0',
                 'agm_contribution_fee' => 'required|integer|min:0',
                 'late_registration_waiting_period_days' => 'required|integer|min:0',
+                'defaulting_waiting_period_days' => 'required|integer|min:0',
             ];
 
             $this->validate([

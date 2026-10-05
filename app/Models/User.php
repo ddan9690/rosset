@@ -23,6 +23,7 @@ class User extends Authenticatable
         'tsc_number',
         'id_number',
         'membership_number',
+        'joined_at', // Added official membership joining date
         'school_level',
         'school',
         'email',
@@ -39,7 +40,7 @@ class User extends Authenticatable
         'last_login_at',
         'last_active_at',
     ];
-
+    
     protected $hidden = [
         'password',
         'remember_token',
@@ -55,16 +56,19 @@ class User extends Authenticatable
             'last_login_at' => 'datetime',
             'last_active_at' => 'datetime',
             'registration_fee_paid' => 'boolean',
+            'joined_at' => 'datetime',
         ];
     }
 
-    /** * User's Solidarity Fund wallet. */ public function solidarityFund()
+    /** * User's Solidarity Fund wallet. */ 
+    public function solidarityFund()
     {
         return $this->hasOne(SolidarityFund::class, 'user_id');
     }
+
     /**
-     * Activate the user after a successful registration fee payment 
-     * and assign the next sequential membership number if not already present.
+     * Activate the user after a successful registration fee payment, 
+     * assign the next sequential membership number, and set the joined_at timestamp.
      */
     public function activateAfterPayment(): void
     {
@@ -86,9 +90,13 @@ class User extends Authenticatable
             $membershipNumber = (string) $nextNumber;
         }
 
+        // Determine joining timestamp (keep existing if already set, otherwise use current time)
+        $joinedAt = $this->joined_at ?? now();
+
         $this->update([
             'registration_fee_paid' => true,
             'membership_number' => $membershipNumber,
+            'joined_at' => $joinedAt,
             'status' => 'active',
         ]);
     }

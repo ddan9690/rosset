@@ -72,11 +72,25 @@ class SolidarityFund extends Component
         ]);
 
         $user = Auth::user();
+        $amount = (float) $this->amount;
         $accountIdentifier = config('services.kcb.account_number', '7936435');
 
+        $existingPending = Transaction::where('user_id', $user->id)
+            ->where('type', 'wallet_topup')
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subMinutes(2))
+            ->first();
+
+        if ($existingPending) {
+            $this->showTopUpModal = false;
+            $this->dispatch('stk-error', ['message' => 'Payment request already sent. Try again in a moment.']);
+            return;
+        }
+
+        // Delegate the API call and pending transaction creation to KcbPaymentService
         $result = $paymentService->stkPush(
             phone: $this->phone,
-            amount: (float) $this->amount,
+            amount: $amount,
             accountIdentifier: $accountIdentifier,
             description: 'Solidarity Wallet Topup',
             userId: $user->id,
@@ -84,21 +98,15 @@ class SolidarityFund extends Component
         );
 
         if ($result['success']) {
-            $this->activeCheckoutRequestId =
-                $result['checkout_request_id']
-                ?? data_get($result, 'response.response.CheckoutRequestID')
-                ?? data_get($result, 'response.CheckoutRequestID')
-                ?? null;
+            $checkoutRequestId = $result['checkout_request_id'] ?? null;
 
-            if (!$this->activeCheckoutRequestId) {
-                Log::error('Wallet Top-up STK Accepted But Checkout ID Missing', [
-                    'result' => $result,
-                ]);
-
+            if (!$checkoutRequestId) {
+                Log::error('Wallet Top-up STK Accepted But Checkout ID Missing', ['result' => $result]);
                 $this->dispatch('stk-error', ['message' => 'KCB accepted the request, but the checkout reference could not be read.']);
                 return;
             }
 
+            $this->activeCheckoutRequestId = $checkoutRequestId;
             $this->showTopUpModal = false;
             $this->stkSent = true;
 
@@ -137,10 +145,7 @@ class SolidarityFund extends Component
             $this->stkSent = false;
             $this->activeCheckoutRequestId = null;
 
-            // Reset pagination to show latest transaction immediately
             $this->resetPage();
-
-            // Dispatch event to close SweetAlert without reloading the full page
             $this->dispatch('payment-successful');
             return;
         }

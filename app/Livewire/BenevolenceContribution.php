@@ -3,9 +3,11 @@
 namespace App\Livewire;
 
 use App\Models\BenevolenceCase;
+use App\Models\BenevolenceContribution as BenevolenceContributionModel;
 use App\Models\Transaction;
 use App\Services\KcbPaymentService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -35,7 +37,6 @@ class BenevolenceContribution extends Component
         ])->findOrFail($id);
 
         $user = Auth::user();
-
         abort_unless($user, 403);
 
         $this->phone = $user->phone ?? '';
@@ -45,10 +46,7 @@ class BenevolenceContribution extends Component
         $this->alreadyContributed = $this->hasContributed();
 
         if ($this->alreadyContributed) {
-            session()->flash(
-                'message',
-                'You have already contributed to case ' . $this->case->case_number . '.'
-            );
+            session()->flash('message', $this->getFlashMessage('already'));
 
             return redirect()->route('portal');
         }
@@ -70,6 +68,17 @@ class BenevolenceContribution extends Component
             ->exists();
     }
 
+    protected function getFlashMessage(string $type = 'success'): string
+    {
+        $memberName = trim(($this->case->member->first_name ?? '') . ' ' . ($this->case->member->last_name ?? ''));
+
+        if ($type === 'already') {
+            return 'You have already contributed to case ' . $this->case->case_number . '. Thank you for standing with ' . $memberName . '. Coming together for unity and support.';
+        }
+
+        return 'Thank you for standing with ' . $memberName . ' in respect of case ' . $this->case->case_number . '. Coming together for unity and support.';
+    }
+
     public function togglePhoneEditable()
     {
         $this->isPhoneEditable = !$this->isPhoneEditable;
@@ -81,19 +90,35 @@ class BenevolenceContribution extends Component
 
     public function checkPaymentStatus()
     {
-        if (!Auth::check()) {
+        if (!Auth::check() || !$this->activeCheckoutRequestId) {
             return;
         }
 
         $successfulTransaction = Transaction::query()
             ->where('user_id', Auth::id())
             ->where('case_number', $this->case->case_number)
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
             ->where('type', 'benevolence_contribution')
             ->where('status', 'success')
-            ->latest('id')
             ->first();
 
         if ($successfulTransaction) {
+            DB::transaction(function () use ($successfulTransaction) {
+                BenevolenceContributionModel::firstOrCreate(
+                    [
+                        'transaction_id' => $successfulTransaction->id,
+                    ],
+                    [
+                        'benevolence_case_id' => $this->case->id,
+                        'user_id' => Auth::id(),
+                        'amount' => $successfulTransaction->amount,
+                        'payment_channel' => 'KCB Paybill / STK Polling',
+                        'reference_number' => $successfulTransaction->reference_number ?? ('KCB-' . $successfulTransaction->checkout_request_id),
+                        'notes' => 'Confirmed via Livewire polling check',
+                    ]
+                );
+            });
+
             Log::info('Benevolence Contribution Confirmed By Polling', [
                 'user_id' => Auth::id(),
                 'case_number' => $this->case->case_number,
@@ -103,14 +128,26 @@ class BenevolenceContribution extends Component
             ]);
 
             $this->stkSent = false;
+            $this->activeCheckoutRequestId = null;
 
-            return redirect()->route('portal', [
-                'payment' => 'success',
-                'case' => $this->case->case_number,
-            ]);
+            session()->flash('message', $this->getFlashMessage('success'));
+
+            return redirect()->route('portal');
         }
 
-        return null;
+        $failedTransaction = Transaction::query()
+            ->where('user_id', Auth::id())
+            ->where('checkout_request_id', $this->activeCheckoutRequestId)
+            ->where('case_number', $this->case->case_number)
+            ->where('type', 'benevolence_contribution')
+            ->where('status', 'failed')
+            ->first();
+
+        if ($failedTransaction) {
+            $this->stkSent = false;
+            $this->activeCheckoutRequestId = null;
+            $this->dispatch('stk-error', ['message' => 'Payment failed or was cancelled.']);
+        }
     }
 
     public function sendStkPrompt(KcbPaymentService $paymentService)
@@ -118,10 +155,9 @@ class BenevolenceContribution extends Component
         if ($this->hasContributed()) {
             $this->alreadyContributed = true;
 
-            return redirect()->route('portal', [
-                'payment' => 'already',
-                'case' => $this->case->case_number,
-            ]);
+            session()->flash('message', $this->getFlashMessage('already'));
+
+            return redirect()->route('portal');
         }
 
         $this->validate(
@@ -137,38 +173,55 @@ class BenevolenceContribution extends Component
             ]
         );
 
-        $amount = $this->case->category->amount ?? 0;
+        $user = Auth::user();
+        $amount = (float) ($this->case->category->amount ?? 0);
+        $accountIdentifier = config('services.kcb.account_number', '7936435');
 
-        $accountIdentifier = config('services.kcb.account_prefix', '7936435');
+        $existingPending = Transaction::where('user_id', $user->id)
+            ->where('case_number', $this->case->case_number)
+            ->where('type', 'benevolence_contribution')
+            ->where('status', 'pending')
+            ->where('created_at', '>=', now()->subMinutes(2))
+            ->first();
+
+        if ($existingPending) {
+            $this->dispatch('stk-error', ['message' => 'Payment request already sent. Try again in a moment.']);
+            return;
+        }
 
         $result = $paymentService->stkPush(
             phone: $this->phone,
             amount: $amount,
             accountIdentifier: $accountIdentifier,
-            description: 'Benevolence Contribution - Case ' . $this->case->case_number,
-            userId: Auth::id(),
-            transactionType: 'benevolence_contribution',
-            caseNumber: $this->case->case_number
+            description: 'Benevolence Contribution - Case ' . $this->case->case_number
         );
 
         if ($result['success']) {
-            $this->activeCheckoutRequestId = $result['checkout_request_id']
-                ?? data_get($result, 'data.response.CheckoutRequestID')
-                ?? null;
+            $checkoutRequestId = $result['checkout_request_id'] ?? null;
+            $merchantRequestId = $result['merchant_request_id'] ?? null;
+            $normalizedPhone = $result['phone_number'] ?? $this->phone;
 
-            if (!$this->activeCheckoutRequestId) {
-                Log::error('STK Request Accepted But Checkout ID Missing', [
-                    'result' => $result,
-                ]);
-
-                $this->dispatch(
-                    'stk-error',
-                    message: 'KCB accepted the payment request, but the checkout reference could not be read.'
-                );
-
+            if (!$checkoutRequestId) {
+                Log::error('Benevolence STK Request Accepted But Checkout ID Missing', ['result' => $result]);
+                $this->dispatch('stk-error', ['message' => 'KCB accepted the payment request, but the checkout reference could not be read.']);
                 return;
             }
 
+            Transaction::create([
+                'user_id' => $user->id,
+                'reference_number' => null,
+                'checkout_request_id' => $checkoutRequestId,
+                'merchant_request_id' => $merchantRequestId,
+                'type' => 'benevolence_contribution',
+                'case_number' => $this->case->case_number,
+                'amount' => $amount,
+                'currency' => 'KES',
+                'status' => 'pending',
+                'phone_number' => $normalizedPhone,
+                'description' => 'Benevolence Contribution - Case ' . $this->case->case_number,
+            ]);
+
+            $this->activeCheckoutRequestId = $checkoutRequestId;
             $this->stkSent = true;
 
             $this->dispatch('stk-sent', [

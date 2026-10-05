@@ -30,14 +30,6 @@
             </div>
         </div>
 
-        @if (session()->has('message'))
-            <div
-                class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
-                <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
-                <span>{{ session('message') }}</span>
-            </div>
-        @endif
-
         @if (!$isProfileComplete)
             <!-- ================= INCOMPLETE PROFILE NOTICE ================= -->
             <div
@@ -169,7 +161,8 @@
 
             <!-- ================= BENEVOLENCE CASES SECTION ================= -->
             <div class="space-y-4">
-                <div class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div
+                    class="border-b border-slate-200 pb-3 flex flex-col sm:flex-row items-center justify-between gap-4">
                     <h2 class="text-sm font-bold uppercase tracking-wider text-slate-800">
                         ROSSET-SWA BENEVOLENCE CASES
                     </h2>
@@ -177,7 +170,8 @@
                     <!-- Search and Filter Bar -->
                     <div class="flex items-center space-x-2 w-full sm:w-auto">
                         <div class="relative flex-1 sm:w-64">
-                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+                            <span
+                                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                 <i data-lucide="search" class="w-3.5 h-3.5"></i>
                             </span>
                             <input type="text" wire:model.live.debounce.300ms="search"
@@ -197,18 +191,33 @@
                     </div>
                 </div>
 
+                <!-- Flash Message Just Above Cards -->
+                @if (session()->has('message'))
+                    <div
+                        class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center justify-between shadow-xs">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                            <span>
+                                {{ session('message') }} Thank you for standing with
+                                <strong>{{ Auth::user()->first_name ?? 'Member' }}</strong>.
+                            </span>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                     @forelse($benevolenceCases as $case)
                         <div
                             class="bg-white border border-slate-200 rounded-lg overflow-hidden shadow-2xs flex flex-col justify-between transition hover:shadow-sm">
-                            
+
                             <!-- Card Header -->
                             <div class="bg-slate-900 text-white px-3 py-1.5 flex items-center justify-between">
                                 <span class="font-mono text-[10px] font-bold text-slate-100 uppercase tracking-wide">
                                     {{ $case->case_number }}
                                 </span>
-                                <span class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider
-                                    @if($case->status === 'active') bg-emerald-500 text-white
+                                <span
+                                    class="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider
+                                    @if ($case->status === 'active') bg-emerald-500 text-white
                                     @elseif($case->status === 'closed') bg-slate-600 text-slate-200
                                     @else bg-amber-500 text-white @endif">
                                     {{ $case->status }}
@@ -247,7 +256,7 @@
 
                                 <!-- View Details Link Triggering Modal -->
                                 <div class="pt-1 text-right">
-                                    <button type="button" 
+                                    <button type="button"
                                         @click="showModal = true; modalTitle = 'Case: {{ $case->case_number }}'; modalDetails = @js($case->case_details);"
                                         class="text-[10px] font-bold text-[#0E3A59] hover:underline inline-flex items-center space-x-1 cursor-pointer">
                                         <i data-lucide="eye" class="w-3 h-3"></i>
@@ -275,15 +284,18 @@
                                         wire:loading.attr="disabled"
                                         class="w-full py-1.5 px-3 rounded text-white font-bold text-[10px] transition shadow-2xs hover:opacity-90 cursor-pointer bg-slate-900 flex items-center justify-center space-x-1 uppercase tracking-wider">
                                         <i data-lucide="send" class="w-3 h-3"></i>
-                                        <span wire:loading.remove wire:target="sendContribution({{ $case->id }})">Contribute</span>
-                                        <span wire:loading wire:target="sendContribution({{ $case->id }})">Redirecting...</span>
+                                        <span wire:loading.remove
+                                            wire:target="sendContribution({{ $case->id }})">Contribute</span>
+                                        <span wire:loading
+                                            wire:target="sendContribution({{ $case->id }})">Redirecting...</span>
                                     </button>
                                 @endif
                             </div>
 
                         </div>
                     @empty
-                        <div class="col-span-full py-12 text-center bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
+                        <div
+                            class="col-span-full py-12 text-center bg-white border border-slate-200 rounded-xl text-slate-400 text-xs">
                             There are currently no benevolence cases matching your criteria.
                         </div>
                     @endforelse
@@ -298,21 +310,26 @@
             </div>
 
             <!-- ================= CASE DETAILS MODAL ================= -->
-            <div x-cloak x-show="showModal" class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
-                <div @click.away="showModal = false" class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
+            <div x-cloak x-show="showModal"
+                class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                <div @click.away="showModal = false"
+                    class="bg-white rounded-xl max-w-lg w-full p-6 shadow-xl border border-slate-200 space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider" x-text="modalTitle"></h3>
+                        <h3 class="text-sm font-bold text-slate-900 uppercase tracking-wider" x-text="modalTitle">
+                        </h3>
                         <button @click="showModal = false" class="text-slate-400 hover:text-slate-600 cursor-pointer">
                             <i data-lucide="x" class="w-4 h-4"></i>
                         </button>
                     </div>
-                    
+
                     <div class="space-y-2">
-                        <p class="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg leading-relaxed" x-text="modalDetails"></p>
+                        <p class="text-xs text-slate-700 bg-slate-50 p-3 rounded-lg leading-relaxed"
+                            x-text="modalDetails"></p>
                     </div>
 
                     <div class="pt-2 text-right">
-                        <button @click="showModal = false" class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-800 cursor-pointer">
+                        <button @click="showModal = false"
+                            class="px-4 py-2 bg-slate-900 text-white rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-slate-800 cursor-pointer">
                             Close
                         </button>
                     </div>
@@ -339,13 +356,27 @@
                             <table class="w-full text-left">
                                 <thead class="bg-slate-50 border-b border-slate-200">
                                     <tr>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Date</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Case Number</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Affected Member Name</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Affected Member Number</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Amount</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Payment Channel</th>
-                                        <th class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">Reference</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Date</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Case Number</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Affected Member Name</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Affected Member Number</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Amount</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Payment Channel</th>
+                                        <th
+                                            class="px-5 py-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                                            Reference</th>
                                     </tr>
                                 </thead>
 
@@ -360,7 +391,8 @@
 
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 @if ($contribution->benevolenceCase?->case_number)
-                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
+                                                    <span
+                                                        class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold font-mono bg-slate-100 text-slate-700 border border-slate-200">
                                                         {{ $contribution->benevolenceCase->case_number }}
                                                     </span>
                                                 @else
@@ -371,10 +403,13 @@
                                             <td class="px-5 py-4 whitespace-nowrap">
                                                 <span class="text-xs font-semibold text-slate-800">
                                                     {{ trim(
-                                                        optional($contribution->benevolenceCase?->member)->salutation . ' ' .
-                                                        optional($contribution->benevolenceCase?->member)->first_name . ' ' .
-                                                        optional($contribution->benevolenceCase?->member)->last_name
-                                                    ) ?: 'N/A' }}
+                                                        optional($contribution->benevolenceCase?->member)->salutation .
+                                                            ' ' .
+                                                            optional($contribution->benevolenceCase?->member)->first_name .
+                                                            ' ' .
+                                                            optional($contribution->benevolenceCase?->member)->last_name,
+                                                    ) ?:
+                                                        'N/A' }}
                                                 </span>
                                             </td>
 
@@ -408,7 +443,8 @@
                         </div>
                     @else
                         <div class="py-12 px-6 text-center">
-                            <div class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
+                            <div
+                                class="w-10 h-10 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center mx-auto mb-3">
                                 <i data-lucide="receipt" class="w-5 h-5 text-slate-400"></i>
                             </div>
                             <p class="text-xs font-semibold text-slate-600">No contribution record</p>

@@ -14,6 +14,8 @@ class Transaction extends Model
         'user_id',
         'reference_number',
         'checkout_request_id',
+        'merchant_request_id',
+        'receipt_number',
         'type',
         'case_number',
         'amount',

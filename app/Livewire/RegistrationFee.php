@@ -17,7 +17,7 @@ class RegistrationFee extends Component
 {
     public $phone = '';
     public $stkSent = false;
-    public $registrationFeeAmount = 150; // Default fallback
+    public $registrationFeeAmount = 150;
     public $activeCheckoutRequestId = null;
 
     public function mount()
@@ -26,8 +26,9 @@ class RegistrationFee extends Component
         if ($user) {
             $this->phone = $user->phone ?? '';
             
-            // If the user already paid, redirect straight away
+            // If the user already paid, redirect straight away with flash message
             if ($user->registration_fee_paid) {
+                session()->flash('message', 'You have already paid your registration fee. Welcome to the portal.');
                 return redirect()->route('portal');
             }
         }
@@ -37,6 +38,18 @@ class RegistrationFee extends Component
         if ($setting && $setting->registration_fee !== null) {
             $this->registrationFeeAmount = $setting->registration_fee;
         }
+    }
+
+    protected function getFlashMessage(string $type = 'success'): string
+    {
+        $user = Auth::user();
+        $userName = $user->name ?? 'Member';
+
+        if ($type === 'already') {
+            return 'You have already paid your registration fee. Welcome back, ' . $userName . '.';
+        }
+
+        return 'Thank you for paying your registration fee. Your account is now active. Welcome, ' . $userName . '!';
     }
 
     /**
@@ -69,8 +82,8 @@ class RegistrationFee extends Component
                 $freshUser->activateAfterPayment();
             }
 
-            $this->dispatch('payment-successful');
-            return;
+            session()->flash('message', $this->getFlashMessage('success'));
+            return redirect()->route('portal');
         }
 
         $failedTransaction = Transaction::query()
@@ -89,16 +102,22 @@ class RegistrationFee extends Component
 
     public function sendStkPrompt(KcbPaymentService $paymentService)
     {
+        $user = Auth::user();
+        if ($user && $user->registration_fee_paid) {
+            session()->flash('message', $this->getFlashMessage('already'));
+            return redirect()->route('portal');
+        }
+
         $this->validate([
             'phone' => ['required', 'string', 'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/'],
         ], [
             'phone.regex' => 'Please enter a valid phone number format.',
         ]);
 
-        $user = Auth::user();
         $accountIdentifier = config('services.kcb.account_number', '7936435');
         $amount = (float) $this->registrationFeeAmount; 
 
+        // Let the Service handle the API call and Transaction creation cleanly
         $result = $paymentService->stkPush(
             phone: $this->phone,
             amount: $amount, 
@@ -109,11 +128,7 @@ class RegistrationFee extends Component
         );
 
         if ($result['success']) {
-            $this->activeCheckoutRequestId =
-                $result['checkout_request_id']
-                ?? data_get($result, 'response.response.CheckoutRequestID')
-                ?? data_get($result, 'response.CheckoutRequestID')
-                ?? null;
+            $this->activeCheckoutRequestId = $result['checkout_request_id'] ?? null;
 
             if (!$this->activeCheckoutRequestId) {
                 Log::error('Registration Fee STK Accepted But Checkout ID Missing', [
