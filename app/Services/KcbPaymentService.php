@@ -91,6 +91,24 @@ class KcbPaymentService
         string $transactionType = 'payment'
     ): array {
         try {
+            $phone = $this->normalizePhoneNumber($phone);
+
+            // Safeguard: Check if there's a pending transaction within the last 90 seconds
+            if ($userId) {
+                $recentPending = Transaction::where('user_id', $userId)
+                    ->where('phone_number', $phone)
+                    ->where('status', 'pending')
+                    ->where('created_at', '>=', now()->subSeconds(90))
+                    ->first();
+
+                if ($recentPending) {
+                    return [
+                        'success' => false,
+                        'message' => 'A payment prompt is already active on this phone. Please wait a moment or check your screen.',
+                    ];
+                }
+            }
+
             $token = $this->generateToken();
             if (!$token) {
                 return [
@@ -99,7 +117,6 @@ class KcbPaymentService
                 ];
             }
 
-            $phone = $this->normalizePhoneNumber($phone);
             $invoiceNumber = $accountIdentifier ?: ($this->accountNumber ?: '7936435');
 
             $payload = [
@@ -123,9 +140,17 @@ class KcbPaymentService
 
             if (!$response->successful()) {
                 Log::error('KCB STK Push HTTP Error', ['status' => $response->status(), 'body' => $response->body()]);
+                
+                $errorMessage = data_get($responseData, 'response.errorMessage') 
+                    ?? data_get($responseData, 'errorMessage') 
+                    ?? data_get($responseData, 'message') 
+                    ?? 'Payment request failed at gateway.';
+
                 return [
                     'success' => false,
-                    'message' => 'Payment request failed at gateway.',
+                    'message' => str_contains(strtolower($errorMessage), 'already sent') 
+                        ? 'An STK push was already sent to this phone. Please check your device or wait 1 minute before trying again.' 
+                        : $errorMessage,
                     'response' => $responseData,
                 ];
             }
@@ -133,7 +158,7 @@ class KcbPaymentService
             $checkoutRequestId = data_get($responseData, 'response.CheckoutRequestID')
                 ?? data_get($responseData, 'Response.CheckoutRequestID')
                 ?? data_get($responseData, 'CheckoutRequestID')
-                 ?? data_get($responseData, 'checkoutRequestID');
+                ?? data_get($responseData, 'checkoutRequestID');
 
             $merchantRequestId = data_get($responseData, 'response.MerchantRequestID')
                 ?? data_get($responseData, 'Response.MerchantRequestID')
@@ -196,6 +221,7 @@ class KcbPaymentService
             ?? $payload;
 
         if (!is_array($stkCallback)) {
+            Log::error('KCB IPN Invalid Structure', ['payload' => $payload]);
             return [
                 'success' => false,
                 'message' => 'Invalid KCB callback structure.',
@@ -296,7 +322,7 @@ class KcbPaymentService
                         ->where('status', 'pending')
                         ->update([
                             'status' => 'failed',
-                            'gateway_response' => ['note' => 'Superseded by successful transaction ID ' . $lockedTransaction->id],
+                            'gateway_response' => $payload,
                         ]);
                 }
             });
@@ -308,6 +334,7 @@ class KcbPaymentService
                 'message' => 'IPN processed successfully.',
             ];
         } else {
+            // Store the full raw payload even on failure (user cancellation, wrong PIN, etc.)
             $transaction->update([
                 'status' => 'failed',
                 'gateway_response' => $payload,

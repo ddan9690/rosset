@@ -7,11 +7,11 @@
             <div class="flex items-center space-x-3">
                 <i data-lucide="check-circle-2" class="w-5 h-5 text-emerald-600 flex-shrink-0"></i>
                 <div>
-                    <p class="font-bold">Benevolence case created successfully!</p>
+                    <p class="font-bold">Benevolence case opened successfully for member number <span class="font-mono">{{ $data['member_no'] }}</span> {{ $data['member_name'] }}.</p>
                     @if($data['enabled'])
-                        <p class="text-emerald-700 mt-0.5">Solidarity auto-settlement completed: <strong class="font-mono">{{ $data['settled'] }}</strong> out of <span class="font-mono">{{ $data['attempted'] }}</span> active members had sufficient wallet balance and were successfully settled.</p>
+                        <p class="text-emerald-700 mt-0.5"><strong class="font-mono">{{ $data['settled'] }}</strong> number of members have been settled for the case from their solidarity fund.</p>
                     @else
-                        <p class="text-emerald-700 mt-0.5">No contibution made form  Solidarity Fund for this case.</p>
+                        <p class="text-emerald-700 mt-0.5">No contribution made from Solidarity Fund for this case (auto-settlement was disabled).</p>
                     @endif
                 </div>
             </div>
@@ -25,7 +25,7 @@
         </div>
         <a href="{{ route('admin.benevolence.cases.create') }}" wire:navigate class="px-4 py-2.5 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-xs bg-[#2EA3F2] hover:bg-sky-500 cursor-pointer flex items-center space-x-1">
             <i data-lucide="plus" class="w-4 h-4"></i>
-            <span>Create Case</span>
+            <span>Open New Benovelence Case</span>
         </a>
     </div>
 

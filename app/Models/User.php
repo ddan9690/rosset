@@ -23,7 +23,7 @@ class User extends Authenticatable
         'tsc_number',
         'id_number',
         'membership_number',
-        'joined_at', // Added official membership joining date
+        'joined_at',
         'school_level',
         'school',
         'email',

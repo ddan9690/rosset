@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\BenevolenceCases;
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceCategory;
 use App\Models\User;
+use App\Services\BenevolenceSettlementService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -22,6 +23,14 @@ class Create extends Component
     public $benevolence_category_id = '';
     public $case_details = '';
     public $deadline = '';
+    public $auto_settle = true; // Default to checked
+
+    // Multi-step modal progress properties
+    public $isProcessing = false;
+    public $activeStep = 1; // 1: Opening Case, 2: Deducting Solidarity
+    public $progressPercentage = 0;
+    public $progressMessage = '';
+    public $settledCount = 0;
 
     protected function rules()
     {
@@ -30,6 +39,7 @@ class Create extends Component
             'benevolence_category_id' => 'required|exists:benevolence_categories,id',
             'case_details' => 'required|string',
             'deadline' => 'required|date',
+            'auto_settle' => 'boolean',
         ];
     }
 
@@ -49,27 +59,39 @@ class Create extends Component
         $this->benevolence_category_id = '';
         $this->case_details = '';
         $this->deadline = '';
+        $this->auto_settle = true;
     }
 
     public function save()
     {
         $this->validate();
 
-        // 1. Get membership number (fall back to ID if membership_number is missing)
+        $this->isProcessing = true;
+        $memberName = trim(($this->selectedMember->first_name ?? 'Member') . ' ' . ($this->selectedMember->last_name ?? ''));
         $membershipNo = $this->selectedMember->membership_number ?? $this->selectedMember->id;
 
-        // 2. Get global incremental sequence across all cases in the system
+        // =========================================================================
+        // STEP 1: SIMULATE OPENING CASE PROCESS
+        // =========================================================================
+        $this->activeStep = 1;
+        $this->progressPercentage = 10;
+        $this->progressMessage = "Validating member credentials and category parameters...";
+        usleep(350000); 
+
+        $this->progressPercentage = 30;
+        $this->progressMessage = "Generating secure case sequence and unique identifiers...";
+        usleep(350000);
+
         $latestCase = BenevolenceCase::latest('id')->first();
         $globalSequence = $latestCase ? $latestCase->id + 1 : 1;
-
-        // 3. Format case number as MembershipNumber/GlobalSequence (e.g., "76/5", "85/6")
         $caseNumber = $membershipNo . '/' . $globalSequence;
-
-        // 4. Generate slug using member's name, membership number, and global sequence (e.g., "john-doe-76-5")
-        $memberName = trim(($this->selectedMember->first_name ?? 'member') . ' ' . ($this->selectedMember->last_name ?? ''));
         $slug = Str::slug($memberName . '-' . $membershipNo . '-' . $globalSequence);
 
-        BenevolenceCase::create([
+        $this->progressPercentage = 60;
+        $this->progressMessage = "Persisting benevolence case record ({$caseNumber})...";
+        usleep(300000);
+
+        $case = BenevolenceCase::create([
             'case_number' => $caseNumber,
             'slug' => $slug,
             'user_id' => $this->user_id,
@@ -80,8 +102,47 @@ class Create extends Component
             'created_by' => Auth::id(),
         ]);
 
-        session()->flash('message', 'Benevolence case created successfully.');
-        return redirect()->route('admin.benevolence.cases.index');
+        $this->progressPercentage = 100;
+        $this->progressMessage = "Benevolence case successfully opened!";
+        usleep(400000);
+
+        // =========================================================================
+        // STEP 2: SOLIDARITY FUND DEDUCTIONS (IF ENABLED)
+        // =========================================================================
+        if ($this->auto_settle) {
+            $this->activeStep = 2;
+            $this->progressPercentage = 0;
+            $this->progressMessage = "Scanning active wallets for eligible member contributions...";
+            usleep(300000);
+
+            $service = new BenevolenceSettlementService();
+            
+            $this->settledCount = $service->settleEligibleMembers($case, function ($current, $total, $msg) {
+                $this->progressMessage = $msg;
+                $this->progressPercentage = 10 + (int)(($current / max($total, 1)) * 85);
+            });
+        } else {
+            $this->activeStep = 2;
+            $this->progressPercentage = 100;
+            $this->progressMessage = "Auto-settlement skipped as requested.";
+        }
+
+        $this->progressPercentage = 100;
+        $this->progressMessage = "Operations completed successfully.";
+        usleep(300000);
+
+        // Flash session data for index view
+        session()->flash('solidarity_settled', [
+            'enabled' => $this->auto_settle,
+            'settled' => $this->settledCount,
+            'attempted' => User::where('status', 'active')->where('id', '!=', $this->user_id)->count(),
+            'case_number' => $case->case_number,
+            'member_name' => $memberName,
+            'member_no' => $membershipNo,
+        ]);
+
+        // Dispatch browser event to trigger SweetAlert dialog before redirecting
+        $this->dispatch('case-opened-success', ['redirectUrl' => route('admin.benevolence.cases.index')]);
     }
 
     public function render()
