@@ -14,6 +14,7 @@ class SolidarityFund extends Model
         'balance',
         'total_topups',
         'total_deductions',
+        
     ];
 
     public function user()

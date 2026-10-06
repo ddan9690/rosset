@@ -16,6 +16,7 @@ class Setting extends Model
         'registration_deadline_day',
         'late_registration_waiting_period_days',
         'defaulting_waiting_period_days',
+        'solidarity_max_balance',
     ];
 
     /**

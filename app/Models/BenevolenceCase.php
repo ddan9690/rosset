@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -25,7 +26,15 @@ class BenevolenceCase extends Model
     /**
      * Get the affected member (user) linked to this case.
      */
-    public function member()
+    public function member(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /**
+     * Alias for member relationship so ->user works.
+     */
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
     }
@@ -33,7 +42,7 @@ class BenevolenceCase extends Model
     /**
      * Get the benevolence category associated with this case.
      */
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(BenevolenceCategory::class, 'benevolence_category_id');
     }
@@ -41,7 +50,7 @@ class BenevolenceCase extends Model
     /**
      * Get the admin user who created this case.
      */
-    public function creator()
+    public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }

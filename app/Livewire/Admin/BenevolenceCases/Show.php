@@ -4,7 +4,11 @@ namespace App\Livewire\Admin\BenevolenceCases;
 
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceContribution;
+use App\Models\SolidarityFund;
+use App\Models\Transaction;
 use App\Models\User;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -39,12 +43,78 @@ class Show extends Component
 
     public function updateStatus()
     {
-        if (in_array($this->selectedStatus, ['active', 'suspended', 'closed'])) {
-            $this->case->update(['status' => $this->selectedStatus]);
+        if (!in_array($this->selectedStatus, ['active', 'suspended', 'closed'])) {
+            return;
+        }
+
+        DB::beginTransaction();
+
+        try {
+            $previousStatus = $this->case->status;
+            $targetStatus = $this->selectedStatus;
+
+            // Handle Suspension / Solidarity Fund Refund Logic
+            if ($targetStatus === 'suspended' && $previousStatus !== 'suspended') {
+                // Fetch contributions made specifically via Solidarity Fund Wallet for this case
+                $contributions = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
+                    ->where('payment_channel', 'Solidarity Fund Wallet')
+                    ->with('transaction')
+                    ->get();
+
+                foreach ($contributions as $contribution) {
+                    $userWallet = SolidarityFund::where('user_id', $contribution->user_id)->lockForUpdate()->first();
+                    $user = User::find($contribution->user_id);
+
+                    if ($userWallet && $user) {
+                        // 1. Refund/increment back the solidarity fund balance
+                        $userWallet->increment('balance', $contribution->amount);
+
+                        $refNo = 'REF-' . strtoupper(Str::random(8));
+
+                        // 2. Record refund transaction log
+                        Transaction::create([
+                            'user_id' => $user->id,
+                            'amount' => $contribution->amount,
+                            'type' => 'credit',
+                            'category' => 'solidarity_refund',
+                            'reference_number' => $refNo,
+                            'status' => 'success',
+                            'phone_number' => $user->phone ?? null,
+                            'description' => "Solidarity refund for suspended case: {$this->case->case_number}",
+                        ]);
+
+                        // Optional: Mark the original transaction as reversed if tracked
+                        if ($contribution->transaction) {
+                            $contribution->transaction->update(['status' => 'refunded']);
+                        }
+                    }
+                }
+
+                // Optional: Delete or mark solidarity contributions as reversed/deleted
+                BenevolenceContribution::where('benevolence_case_id', $this->case->id)
+                    ->where('payment_channel', 'Solidarity Fund Wallet')
+                    ->delete();
+            }
+
+            // Update case status
+            $this->case->update(['status' => $targetStatus]);
             $this->case->refresh();
 
+            DB::commit();
+
             $this->showStatusModal = false;
-            session()->flash('message', 'Case status updated to ' . ucfirst($this->selectedStatus) . ' successfully.');
+            
+            $message = 'Case status updated to ' . ucfirst($targetStatus) . ' successfully.';
+            if ($targetStatus === 'suspended') {
+                $message .= ' Solidarity fund deductions have been fully refunded to affected members.';
+            }
+
+            session()->flash('message', $message);
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            $this->showStatusModal = false;
+            session()->flash('error', 'Failed to update case status: ' . $e->getMessage());
         }
     }
 
@@ -70,33 +140,27 @@ class Show extends Component
 
     public function render()
     {
-        // Fetch all contributions for this case using benevolence_case_id
         $contributions = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
             ->with('user')
             ->latest('created_at')
             ->get();
 
-        // Total unique contributors
         $contributingUserIds = $contributions->pluck('user_id')->unique();
         $totalContributorsCount = $contributingUserIds->count();
 
-        // Total members in system for percentage calculation
         $totalSystemMembers = User::count();
         $contributionPercentage = $totalSystemMembers > 0 
             ? round(($totalContributorsCount / $totalSystemMembers) * 100, 2) 
             : 0;
 
-        // Total funds collected for this case
         $totalAmountCollected = $contributions->sum('amount');
 
-        // Breakdown by Gender
         $contributorsByGender = User::whereIn('id', $contributingUserIds)
             ->selectRaw('gender, count(*) as count')
             ->groupBy('gender')
             ->pluck('count', 'gender')
             ->toArray();
 
-        // Breakdown by School Level
         $contributorsBySchoolLevel = User::whereIn('id', $contributingUserIds)
             ->selectRaw('school_level, count(*) as count')
             ->groupBy('school_level')

@@ -26,7 +26,7 @@ class Portal extends Component
 
     // Search and Sort properties for Benevolence Cases
     public $search = '';
-    public $sortBy = 'deadline_soonest'; // options: deadline_soonest, deadline_latest, newest, oldest
+    public $sortBy = 'newest'; // Default to newest created first
 
     public function updatingSearch()
     {
@@ -106,25 +106,25 @@ class Portal extends Component
         $user = Auth::user();
 
         // Build Query for Benevolence Cases with Search & Sorting
-        $query = BenevolenceCase::with(['member', 'category']);
+        $query = BenevolenceCase::with(['member', 'category'])
+            ->whereIn('status', ['active', 'closed']);
 
         // Search filter (Case Number or Member's First/Last Name)
         if (!empty($this->search)) {
             $searchTerm = trim($this->search);
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('case_number', 'like', "%{$searchTerm}%")
-                  ->orWhereHas('member', function ($memberQuery) use ($searchTerm) {
-                      $memberQuery->where('first_name', 'like', "%{$searchTerm}%")
-                                  ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                                  ->orWhere('tsc_number', 'like', "%{$searchTerm}%")
-                                  ->orWhere('membership_number', 'like', "%{$searchTerm}%");
-                  });
+                    ->orWhereHas('member', function ($memberQuery) use ($searchTerm) {
+                        $memberQuery->where('first_name', 'like', "%{$searchTerm}%")
+                                    ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                                    ->orWhere('tsc_number', 'like', "%{$searchTerm}%")
+                                    ->orWhere('membership_number', 'like', "%{$searchTerm}%");
+                    });
             });
         }
 
         // Sorting configuration
         if ($this->sortBy === 'deadline_soonest') {
-            // Null deadlines pushed to the bottom, earliest deadline first
             $query->orderByRaw('CASE WHEN deadline IS NULL THEN 1 ELSE 0 END')
                   ->orderBy('deadline', 'asc');
         } elseif ($this->sortBy === 'deadline_latest') {

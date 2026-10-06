@@ -17,7 +17,7 @@ class RegistrationFee extends Component
 {
     public $phone = '';
     public $stkSent = false;
-    public $registrationFeeAmount = 150;
+    public $registrationFeeAmount;
     public $activeCheckoutRequestId = null;
 
     public function mount()
@@ -33,11 +33,14 @@ class RegistrationFee extends Component
             }
         }
 
-        // Fetch registration fee from system settings
-        $setting = Setting::first();
-        if ($setting && $setting->registration_fee !== null) {
-            $this->registrationFeeAmount = $setting->registration_fee;
-        }
+        // Fetch registration fee dynamically from system settings
+        $this->loadRegistrationFee();
+    }
+
+    protected function loadRegistrationFee()
+    {
+        $setting = Setting::current();
+        $this->registrationFeeAmount = $setting->registration_fee;
     }
 
     protected function getFlashMessage(string $type = 'success'): string
@@ -113,6 +116,9 @@ class RegistrationFee extends Component
         ], [
             'phone.regex' => 'Please enter a valid phone number format.',
         ]);
+
+        // Always fetch the freshest amount from the Setting model right before initiating STK
+        $this->loadRegistrationFee();
 
         $accountIdentifier = config('services.kcb.account_number', '7936435');
         $amount = (float) $this->registrationFeeAmount; 

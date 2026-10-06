@@ -2,6 +2,7 @@
 
 namespace App\Livewire;
 
+use App\Models\Setting;
 use App\Models\SolidarityFund as SolidarityModel;
 use App\Models\Transaction;
 use App\Services\KcbPaymentService;
@@ -63,16 +64,36 @@ class SolidarityFund extends Component
     public function topUpWallet(KcbPaymentService $paymentService)
     {
         $this->validate([
-            'amount' => 'required|integer|min:2|max:1000',
+            'amount' => 'required|numeric|min:1',
             'phone' => ['required', 'string', 'regex:/^(?:254[17]\d{8}|0[17]\d{8}|[17]\d{8})$/'],
         ], [
-            'amount.min' => 'The minimum top-up amount is Ksh 2.',
-            'amount.max' => 'The maximum top-up amount is Ksh 1,000.',
+            'amount.min' => 'The minimum top-up amount is Ksh 1.',
             'phone.regex' => 'Please enter a valid M-Pesa phone number format.',
         ]);
 
         $user = Auth::user();
         $amount = (float) $this->amount;
+
+        // Fetch current solidarity wallet and global settings limit
+        $wallet = SolidarityModel::firstOrCreate(
+            ['user_id' => $user->id],
+            ['balance' => 0, 'total_topups' => 0, 'total_deductions' => 0]
+        );
+
+        $settings = Setting::current();
+        $maxLimit = (float) ($settings->solidarity_max_balance ?? 1000);
+        $projectedBalance = $wallet->balance + $amount;
+
+        // Check if the deposit exceeds the maximum allowed balance
+        if ($projectedBalance > $maxLimit) {
+            $this->showTopUpModal = false;
+            $this->dispatch('exceeds-limit', [
+                'max' => $maxLimit,
+                'current' => $wallet->balance
+            ]);
+            return;
+        }
+
         $accountIdentifier = config('services.kcb.account_number', '7936435');
 
         $existingPending = Transaction::where('user_id', $user->id)
@@ -181,6 +202,7 @@ class SolidarityFund extends Component
         return view('livewire.solidarity-fund', [
             'wallet' => $wallet,
             'statements' => $statements,
+            'maxLimit' => Setting::current()->solidarity_max_balance ?? 1000,
         ]);
     }
 }

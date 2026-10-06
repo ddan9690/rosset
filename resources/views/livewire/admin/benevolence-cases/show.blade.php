@@ -9,9 +9,11 @@
             @if($case->status !== 'active')
                 <button type="button" wire:click="openStatusModal('active')" class="px-3 py-2 rounded-lg bg-emerald-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-emerald-500 transition cursor-pointer">Make Active</button>
             @endif
-            @if($case->status !== 'suspended')
-                <button type="button" wire:click="openStatusModal('suspended')" class="px-3 py-2 rounded-lg bg-amber-500 text-white font-bold text-xs uppercase tracking-wider hover:bg-amber-400 transition cursor-pointer">Suspend</button>
+            
+            @if($case->status === 'active')
+                <button type="button" onclick="confirmSuspend()" class="px-3 py-2 rounded-lg bg-amber-500 text-white font-bold text-xs uppercase tracking-wider hover:bg-amber-400 transition cursor-pointer">Suspend & Refund</button>
             @endif
+
             @if($case->status !== 'closed')
                 <button type="button" wire:click="openStatusModal('closed')" class="px-3 py-2 rounded-lg bg-slate-600 text-white font-bold text-xs uppercase tracking-wider hover:bg-slate-500 transition cursor-pointer">Close</button>
             @endif
@@ -29,6 +31,13 @@
         <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
             <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
             <span>{{ session('message') }}</span>
+        </div>
+    @endif
+
+    @if (session()->has('error'))
+        <div class="bg-red-50 border border-red-200 text-red-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 text-red-600 flex-shrink-0"></i>
+            <span>{{ session('error') }}</span>
         </div>
     @endif
 
@@ -104,7 +113,6 @@
 
     <!-- Demographics Breakdown -->
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs">
-        <!-- By Gender -->
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
             <h4 class="font-bold uppercase tracking-wider text-slate-800">Contributors by Gender</h4>
             <div class="space-y-2">
@@ -119,7 +127,6 @@
             </div>
         </div>
 
-        <!-- By School Level -->
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-xs space-y-3">
             <h4 class="font-bold uppercase tracking-wider text-slate-800">Contributors by School Level</h4>
             <div class="space-y-2">
@@ -179,12 +186,14 @@
         </div>
     </div>
 
-    <!-- ================= STATUS MODAL ================= -->
+    <!-- ================= STATUS MODAL (For Active / Closed) ================= -->
     @if($showStatusModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs">
             <div class="bg-white rounded-xl shadow-xl border border-slate-200 p-6 max-w-sm w-full space-y-4 text-xs">
                 <h4 class="font-bold text-sm uppercase tracking-wider text-slate-900">Confirm Status Change</h4>
-                <p class="text-slate-600">Are you sure you want to change this case status to <span class="font-bold uppercase text-[#0E3A59]">{{ $selectedStatus }}</span>?</p>
+                <p class="text-slate-600">
+                    Are you sure you want to change this case status to <span class="font-bold uppercase text-[#0E3A59]">{{ $selectedStatus }}</span>?
+                </p>
                 <div class="flex items-center justify-end space-x-2 pt-2">
                     <button type="button" wire:click="$set('showStatusModal', false)" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition cursor-pointer">Cancel</button>
                     <button type="button" wire:click="updateStatus" class="px-4 py-2 rounded-lg bg-[#2EA3F2] text-white font-bold uppercase tracking-wider hover:bg-sky-500 transition cursor-pointer">Confirm</button>
@@ -215,4 +224,39 @@
 <script>
     document.addEventListener('livewire:navigated', () => { if (window.lucide) lucide.createIcons(); });
     document.addEventListener('DOMContentLoaded', () => { if (window.lucide) lucide.createIcons(); });
+
+    function confirmSuspend() {
+        Swal.fire({
+            title: 'CRITICAL ACTION REQUIRED!',
+            html: '<p class="text-xs text-slate-600 mt-2">Suspending this benevolence case will automatically reverse and refund all solidarity fund deductions back to members\' balances.</p>' +
+                  '<p class="text-xs font-bold text-red-600 mt-3">Type <span class="font-mono bg-slate-100 px-1 py-0.5 rounded border border-red-200">SUSPEND</span> below to confirm:</p>',
+            input: 'text',
+            inputAttributes: {
+                autocapitalize: 'off',
+                placeholder: 'Type SUSPEND here...'
+            },
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Yes, Suspend & Refund',
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#64748b',
+            customClass: {
+                popup: 'rounded-xl text-xs',
+                confirmButton: 'px-4 py-2 rounded-lg font-bold text-xs uppercase',
+                cancelButton: 'px-4 py-2 rounded-lg font-bold text-xs uppercase'
+            },
+            preConfirm: (inputValue) => {
+                if (inputValue !== 'SUSPEND') {
+                    Swal.showValidationMessage('You must type exactly "SUSPEND" to proceed.');
+                }
+                return inputValue === 'SUSPEND';
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                @this.call('openStatusModal', 'suspended').then(() => {
+                    @this.call('updateStatus');
+                });
+            }
+        });
+    }
 </script>

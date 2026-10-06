@@ -18,6 +18,7 @@ class Settings extends Component
     public $agm_contribution_fee;
     public $late_registration_waiting_period_days;
     public $defaulting_waiting_period_days;
+    public $solidarity_max_balance;
     
     // Separated deadline properties
     public $registration_deadline_month;
@@ -36,6 +37,7 @@ class Settings extends Component
             $this->agm_contribution_fee = $settings?->agm_contribution_fee;
             $this->late_registration_waiting_period_days = $settings?->late_registration_waiting_period_days;
             $this->defaulting_waiting_period_days = $settings?->defaulting_waiting_period_days;
+            $this->solidarity_max_balance = $settings?->solidarity_max_balance;
         }
         
         $this->resetErrorBag();
@@ -47,17 +49,14 @@ class Settings extends Component
         $this->resetErrorBag();
     }
 
-    // Helper to get maximum days in a given month (ignoring leap year or using standard max days)
     public function getMaxDaysProperty()
     {
         $month = (int) ($this->registration_deadline_month ?? 2);
-        // Using 2024 as a leap year fallback so February can safely show up to 29 if needed, or 28
         return cal_days_in_month(CAL_GREGORIAN, $month, 2024);
     }
 
     public function updatedRegistrationDeadlineMonth($value)
     {
-        // Reset or cap day if it exceeds the new month's maximum days
         $maxDays = cal_days_in_month(CAL_GREGORIAN, (int) $value, 2024);
         if ($this->registration_deadline_day > $maxDays) {
             $this->registration_deadline_day = $maxDays;
@@ -85,6 +84,7 @@ class Settings extends Component
                 'agm_contribution_fee' => 'required|integer|min:0',
                 'late_registration_waiting_period_days' => 'required|integer|min:0',
                 'defaulting_waiting_period_days' => 'required|integer|min:0',
+                'solidarity_max_balance' => 'required|integer|min:0',
             ];
 
             $this->validate([

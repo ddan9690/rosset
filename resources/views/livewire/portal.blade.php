@@ -271,7 +271,7 @@
                                     <button type="button" disabled
                                         class="w-full py-1.5 px-3 rounded text-slate-400 bg-slate-100 border border-slate-200 font-bold text-[10px] uppercase tracking-wider flex items-center justify-center space-x-1 cursor-not-allowed">
                                         <i data-lucide="ban" class="w-3 h-3"></i>
-                                        <span>{{ ucfirst($case->status) }} (Disabled)</span>
+                                        <span>{{ ucfirst($case->status) }}</span>
                                     </button>
                                 @elseif ($case->contribution_made)
                                     <button type="button" disabled
