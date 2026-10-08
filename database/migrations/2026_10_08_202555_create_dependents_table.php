@@ -1,29 +1,24 @@
 <?php
-
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
-        Schema::create('member_dependants', function (Blueprint $table) {
+        Schema::create('dependents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->json('dependants')->nullable();
+            $table->json('spouse')->nullable();
+            $table->json('parents')->nullable();
+            $table->json('children')->nullable();        
             $table->timestamps();
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
-        Schema::dropIfExists('member_dependants');
+        Schema::dropIfExists('dependents');
     }
 };

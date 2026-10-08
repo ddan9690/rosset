@@ -6,20 +6,35 @@
     <title>Transactions Records</title>
     <style>
         @page {
-            margin: 15px 18px 18px 18px;
+            margin: 15px 18px 30px 18px;
         }
 
         body {
             font-family: Helvetica, Arial, sans-serif;
-            font-size: 8px;
+            font-size: 7.5px;
             color: #000000;
             margin: 0;
             padding: 0;
             line-height: 1.15;
+            position: relative;
+        }
+
+        /* Watermark styling */
+        .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 220px;
+            height: auto;
+            opacity: 0.08;
+            z-index: -1000;
         }
 
         .container {
             padding: 0;
+            position: relative;
+            z-index: 1;
         }
 
         .header-section {
@@ -37,7 +52,7 @@
         .header-section h1 {
             margin: 0;
             color: #000000;
-            font-size: 14px;
+            font-size: 13px;
             text-transform: uppercase;
             letter-spacing: 0.3px;
         }
@@ -45,34 +60,25 @@
         .header-section h2 {
             margin: 2px 0 0 0;
             color: #000000;
-            font-size: 10px;
+            font-size: 9.5px;
             font-weight: bold;
         }
 
         .report-title {
             text-align: center;
-            font-size: 9px;
+            font-size: 8.5px;
             font-weight: bold;
             text-transform: uppercase;
-            margin: 0 0 7px 0;
+            margin: 0 0 5px 0;
         }
 
-        .summary {
+        /* Generated At positioned on the far right right above the table */
+        .table-meta-top {
             text-align: right;
-            padding-bottom: 5px;
-            margin-bottom: 7px;
-        }
-
-        .summary-label {
-            font-size: 7px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .summary-amount {
-            font-size: 11px;
-            font-weight: bold;
-            margin-top: 1px;
+            font-size: 5.5px;
+            font-style: italic;
+            color: #333333;
+            margin-bottom: 2px;
         }
 
         .data-table {
@@ -89,143 +95,130 @@
             page-break-inside: avoid;
         }
 
+        /* Thinner, lighter, visible borders */
         .data-table th,
         .data-table td {
-            border: 1px solid #000000;
-            padding: 3px 4px;
+            border: 0.5px solid #555555;
+            padding: 3px 5px;
             vertical-align: middle;
+            text-align: center;
         }
 
         .data-table th {
-            background-color: #ffffff;
+            background-color: #f8f8f8;
             color: #000000;
-            font-size: 7px;
+            font-size: 6.5px;
             text-transform: uppercase;
             letter-spacing: 0.2px;
             font-weight: bold;
-            text-align: center;
             padding-top: 4px;
             padding-bottom: 4px;
         }
 
+        /* Unified data styling matching date/monospace text formatting */
         .data-table td {
-            font-size: 7.5px;
-            color: #000000;
-        }
-
-        .col-reference {
-            width: 24%;
-        }
-
-        .col-amount {
-            width: 14%;
-            text-align: right;
-        }
-
-        .col-phone {
-            width: 18%;
-        }
-
-        .col-type {
-            width: 18%;
-        }
-
-        .col-date {
-            width: 26%;
-        }
-
-        .reference {
             font-family: monospace;
-            font-size: 7px;
+            font-size: 6.5px;
+            color: #111111;
+        }
+
+        /* Specific alignments and overrides */
+        .col-type,
+        .transaction-type,
+        .col-member,
+        .col-description {
+            text-align: left !important;
+        }
+
+        .col-description {
+            text-transform: none !important;
         }
 
         .amount {
-            font-family: monospace;
             font-weight: bold;
-            text-align: right;
-            white-space: nowrap;
-        }
-
-        .phone {
-            font-family: monospace;
-            font-size: 7px;
         }
 
         .transaction-type {
             text-transform: uppercase;
-            font-size: 7px;
-        }
-
-        .date-time {
-            font-family: monospace;
-            font-size: 7px;
-            white-space: nowrap;
         }
 
         .empty-state {
             color: #000000;
             padding: 12px !important;
             text-align: center !important;
-        }
-
-        .footer {
-            position: fixed;
-            bottom: -5px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            font-size: 6px;
-            color: #000000;
-        }
-
-        .footer p {
-            margin: 1px 0;
+            font-family: Helvetica, Arial, sans-serif !important;
         }
     </style>
 </head>
 
 <body>
+    <!-- Centered Watermark Logo -->
+    <img src="{{ public_path('images/logo.png') }}" alt="Watermark" class="watermark">
+
     <div class="container">
-        <div class="header-section"> <img src="{{ public_path('images/logo.png') }}" alt="ROSSET-SWA Logo">
+        <div class="header-section">
+            <img src="{{ public_path('images/logo.png') }}" alt="ROSSET-SWA Logo">
             <h1> Rongo Sub County Teachers Welfare Association </h1>
             <h2> (ROSSET-SWA) </h2>
         </div>
         <div class="report-title"> TRANSACTIONS RECORDS </div>
-        <div class="summary">
-            <div class="summary-label"> TOTAL SUCCESSFUL TRANSACTION AMOUNT </div>
-            <div class="summary-amount"> KSH {{ number_format($totalAmount, 2) }} </div>
+        
+        <!-- Generated At placed on the far right right above the table -->
+        <div class="table-meta-top">
+            Generated At: {{ $generatedAt }}
         </div>
+
         <table class="data-table">
             <thead>
                 <tr>
-                    <th class="col-reference"> Reference </th>
-                    <th class="col-amount"> Amount </th>
-                    <th class="col-phone"> Phone </th>
-                    <th class="col-type"> Type </th>
-                    <th class="col-date"> Date / Time </th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th class="col-member">Member</th>
+                    <th>Mem No</th>
+                    <th>Reference</th>
+                    <th>Amount (Ksh)</th>
+                    <th>Phone</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-description">Description</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($transactions as $tx)
+                    @php
+                        $parsedDate = $tx->created_at ? $tx->created_at->setTimezone('Africa/Nairobi') : null;
+                        
+                        // Normalise phone number back from 2547XXXXXXXX / 2541XXXXXXXX to 07XXXXXXXX / 01XXXXXXXX
+                        $rawPhone = $tx->phone_number ?? '';
+                        if (str_starts_with($rawPhone, '254')) {
+                            $normalizedPhone = '0' . substr($rawPhone, 3);
+                        } else {
+                            $normalizedPhone = $rawPhone ?: '—';
+                        }
+                    @endphp
                     <tr>
-                        <td class="reference"> {{ $tx->reference_number ?? '—' }} </td>
-                        <td class="amount"> {{ number_format($tx->amount ?? 0, 2) }} </td>
-                        <td class="phone"> {{ $tx->phone_number ?? '—' }} </td>
-                        <td class="transaction-type"> {{ str_replace('_', ' ', $tx->type ?? '—') }} </td>
-                        <td class="date-time">
-                            {{ $tx->created_at ? $tx->created_at->setTimezone('Africa/Nairobi')->format('d-m-y g:i A') : '—' }}
+                      <td style="white-space: nowrap;">{{ $parsedDate ? $parsedDate->format('d-M-y') : '—' }}</td>
+                      <td style="white-space: nowrap;">{{ $parsedDate ? $parsedDate->format('h:i A') : '—' }}</td>
+                        <td class="col-member">
+                            @if ($tx->user)
+                                {{ trim(($tx->user->first_name ?? '') . ' ' . ($tx->user->last_name ?? '')) }}
+                            @else
+                                <span style="font-style: italic;">Unknown Member</span>
+                            @endif
                         </td>
-                </tr> @empty <tr>
-                        <td colspan="5" class="empty-state"> No transaction records found. </td>
+                        <td>{{ $tx->user?->membership_number ?? '—' }}</td>
+                        <td>{{ $tx->reference_number ?? '—' }}</td>
+                        <td class="amount">{{ number_format($tx->amount ?? 0, 0) }}</td>
+                        <td>{{ $normalizedPhone }}</td>
+                        <td class="transaction-type">{{ str_replace('_', ' ', $tx->type ?? '—') }}</td>
+                        <td class="col-description" style="text-transform: none;">{{ $tx->description ?? '—' }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="9" class="empty-state"> No transaction records found. </td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
-        <div class="footer">
-            <p> Generated By: {{ $generatedBy }} &nbsp;&nbsp;|&nbsp;&nbsp; Generated At: {{ $generatedAt }} </p>
-            <p> This is an electronically generated official document from the ROSSET-SWA system. </p>
-        </div>
     </div>
 </body>
-
 </html>

@@ -1,9 +1,9 @@
 <?php
 
 use App\Http\Controllers\KcbWebhookController;
+use App\Http\Controllers\PDF\BenevolenceCasePdfController;
 use App\Http\Controllers\PDF\MemberContributionsPdfController;
 use App\Http\Controllers\PDF\TransactionsPdfController;
-use App\Http\Controllers\PDF\BenevolenceCasePdfController;
 use App\Http\Middleware\UpdateUserLastActive;
 use App\Livewire\Admin\BenevolenceCases\Create as BenevolenceCaseCreate;
 use App\Livewire\Admin\BenevolenceCases\Edit as BenevolenceCaseEdit;
@@ -21,15 +21,15 @@ use App\Livewire\Admin\Roles;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Transactions;
 use App\Livewire\Auth\Login;
-use App\Livewire\Auth\Register;
 use App\Livewire\Auth\MembershipStatus;
+use App\Livewire\Auth\Register;
 use App\Livewire\BenevolenceContribution;
 use App\Livewire\Constitution;
+use App\Livewire\Dependants;
 use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\PrivacyPolicy;
 use App\Livewire\Frontend\TermsAndConditions;
 use App\Livewire\Frontend\Updates;
-use App\Livewire\MemberDependants;
 use App\Livewire\MemberProfile;
 use App\Livewire\Portal;
 use App\Livewire\RegistrationFee;
@@ -62,7 +62,7 @@ Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
 
 // Authenticated Routes with Activity Tracking Middleware
 Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
-    
+
     // Member Portal & Self-Service Routes
     Route::get('/membership/status', MembershipStatus::class)
         ->middleware('permission:view membership status')
@@ -83,8 +83,8 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/member/profile', MemberProfile::class)
         ->middleware('permission:update profile')
         ->name('profile.update');
-    
-    Route::get('/member/dependants', MemberDependants::class)
+
+    Route::get('/member/dependants', Dependants::class)
         ->middleware('permission:update dependants')
         ->name('member.dependants.update');
 
@@ -107,7 +107,7 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/admin/benevolence/categories', BenevolenceCategories::class)
         ->middleware('permission:manage benevolence categories')
         ->name('admin.benevolence.categories');
-    
+
     Route::get('/admin/membership-requests', ManageMembershipRequests::class)
         ->middleware('permission:manage membership requests')
         ->name('admin.membership-requests');

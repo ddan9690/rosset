@@ -85,7 +85,7 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-4 font-mono text-slate-500">
-                                    {{ $tx->paid_at ? $tx->paid_at->format('Y-m-d H:i') : $tx->created_at->format('Y-m-d H:i') }}
+                                    {{ $tx->paid_at ? $tx->paid_at->format('d-M-y H:i') : $tx->created_at->format('d-M-y H:i') }}
                                 </td>
                             </tr>
                         @empty

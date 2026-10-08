@@ -136,21 +136,21 @@
         <table class="data-table">
             <thead>
                 <tr>
-                    <th style="width: 25px;" class="text-center">#</th>
                     <th>Date</th>
+                    <th>Time</th>
                     <th>Case No.</th>
                     <th>Affected Member Name</th>
                     <th>Affected Member No.</th>
-                    <th>Amount</th>
+                    <th>Amount (Ksh)</th>
                     <th>Payment Channel</th>
                     <th>Reference</th>
                 </tr>
             </thead>
             <tbody>
-                @forelse($contributionHistory as $index => $contribution)
+                @forelse($contributionHistory as $contribution)
                     <tr>
-                        <td class="text-center">{{ $index + 1 }}</td>
-                        <td>{{ $contribution->created_at ? $contribution->created_at->setTimezone('Africa/Nairobi')->format('d-m-Y g:i a') : 'N/A' }}</td>
+                        <td>{{ $contribution->created_at ? $contribution->created_at->setTimezone('Africa/Nairobi')->format('d-m-Y') : 'N/A' }}</td>
+                        <td>{{ $contribution->created_at ? $contribution->created_at->setTimezone('Africa/Nairobi')->format('g:i a') : 'N/A' }}</td>
                         <td>{{ $contribution->benevolenceCase?->case_number ?? 'N/A' }}</td>
                         <td>
                             {{
@@ -170,7 +170,7 @@
                                 'N/A'
                             }}
                         </td>
-                        <td>KSH {{ number_format($contribution->amount ?? 0) }}</td>
+                        <td>{{ number_format($contribution->amount ?? 0) }}</td>
                         <td>{{ $contribution->payment_channel ?? 'N/A' }}</td>
                         <td>{{ $contribution->reference_number ?? 'N/A' }}</td>
                     </tr>

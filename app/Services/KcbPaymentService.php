@@ -281,7 +281,7 @@ class KcbPaymentService
                         'user_id' => $lockedTransaction->user_id,
                         'amount' => $finalAmount,
                         'type' => 'credit',
-                        'channel' => 'KCB Paybill / STK IPN',
+                        'channel' => 'MPESA PROMPT',
                         'account_identifier' => $accountNumber,
                         'phone_number' => $finalPhone,
                         'description' => $lockedTransaction->description ?: 'KCB Payment',
