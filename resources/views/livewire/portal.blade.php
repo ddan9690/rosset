@@ -1,4 +1,4 @@
-<div class="min-h-screen bg-slate-50 py-8" x-data="{ showModal: false, modalTitle: '', modalDetails: '' }">
+<div class="min-h-screen bg-slate-50 py-8" x-data="{ showModal: false, modalTitle: '', modalDetails: '', showRatingModal: false }">
     <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         <!-- Top Navigation Bar -->
@@ -79,7 +79,7 @@
         @else
             <!-- ================= FULL MEMBER PORTAL CONTENT ================= -->
 
-            <!-- Member Profile & Solidarity Summary Strip -->
+            <!-- Member Profile & Action Strip -->
             <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                 <div class="flex items-center space-x-4">
                     <div class="space-y-1">
@@ -113,28 +113,43 @@
                         <i data-lucide="file-text" class="w-4 h-4"></i>
                         <span>Submit Benevolence Claim</span>
                     </a>
+                </div>
+            </div>
 
-                    <!-- Solidarity Fund Summary Card -->
-                    <div class="bg-slate-50 border border-slate-200 rounded-lg p-3.5 flex items-center justify-between md:justify-start space-x-6">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Solidarity Fund Balance</span>
-                            <div class="flex items-center space-x-3 mt-0.5">
-                                <span class="text-lg font-extrabold text-slate-900 font-mono">KSH {{ number_format($solidarityBalance) }}</span>
-                            </div>
+            <!-- ================= METRICS ROW: WELFARE RATING & SOLIDARITY FUND ================= -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Welfare Rating Card -->
+                <div class="bg-white border border-slate-200 rounded-xl p-6 shadow-xs flex flex-col justify-between space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <div class="flex items-center space-x-2">
+                            <h3 class="font-bold text-xs uppercase tracking-wider text-slate-900">Welfare Rating</h3>
+                            <button type="button" @click="showRatingModal = true" class="text-xs text-[#2EA3F2] font-bold hover:underline cursor-pointer">what is this?</button>
                         </div>
+                        <span class="text-2xl font-extrabold font-mono text-slate-900">{{ $welfareRatingScore }}%</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500">Your standing and commitment towards association solidarity and fellowship.</p>
+                </div>
 
-                        <div class="flex items-center space-x-3">
-                            <div class="w-9 h-9 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-600 shadow-2xs">
-                                <i data-lucide="wallet" class="w-4 h-4"></i>
-                            </div>
-
-                            <a href="{{ route('member.solidarity') }}" wire:navigate
-                                class="px-3.5 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-2xs hover:opacity-90 bg-[#0E3A59]">
-                                View
-                            </a>
+                <!-- Solidarity Fund Balance Card -->
+                <div class="bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-xl p-6 shadow-md flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400 block">Solidarity Fund Balance</span>
+                        <h3 class="text-2xl font-extrabold font-mono text-white tracking-tight mt-1">
+                            KSH {{ number_format($solidarityBalance, 0) }}
+                        </h3>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-full bg-blue-500/20 text-[#2EA3F2] flex items-center justify-center">
+                            <i data-lucide="wallet" class="w-5 h-5"></i>
                         </div>
+                        <a href="{{ route('member.solidarity') }}" wire:navigate
+                            class="px-3.5 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-2xs hover:opacity-90 bg-[#0E3A59]">
+                            View
+                        </a>
                     </div>
                 </div>
+
             </div>
 
             <!-- ================= BENEVOLENCE CASES SECTION ================= -->
@@ -258,6 +273,37 @@
                         {{ $benevolenceCases->links() }}
                     </div>
                 @endif
+            </div>
+
+            <!-- ================= RATING EXPLANATION MODAL (Inspiring Tone) ================= -->
+            <div x-cloak x-show="showRatingModal"
+                class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+                <div @click.away="showRatingModal = false"
+                    class="bg-white rounded-xl max-w-md w-full p-6 shadow-xl border border-slate-200 space-y-4 text-xs animate-in fade-in zoom-in-95 duration-200">
+                    <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                        <h3 class="font-extrabold uppercase tracking-wider text-slate-900">Your Welfare Standing</h3>
+                        <button @click="showRatingModal = false" class="text-slate-400 hover:text-slate-700 font-bold cursor-pointer">&times;</button>
+                    </div>
+                    
+                    <div class="space-y-3 text-slate-600 leading-relaxed">
+                        <p class="font-medium text-slate-700">
+                            Your welfare rating is a reflection of your commitment to our core brotherhood and sisterhood values at ROSSET-SWA. 
+                        </p>
+                        <p>
+                            It is thoughtfully determined by how consistently and promptly you stand by your colleagues through contributions, deadlines, and active fellowship support when they need us most.
+                        </p>
+                        <p class="text-emerald-700 font-semibold bg-emerald-50 p-3 rounded-lg border border-emerald-100">
+                            💡 Every contribution you make not only strengthens your rating but brings warmth, hope, and solid support to a colleague's family. Let's keep standing together!
+                        </p>
+                    </div>
+
+                    <div class="flex justify-end pt-2 border-t border-slate-100">
+                        <button @click="showRatingModal = false"
+                            class="px-4 py-2 bg-slate-900 text-white rounded-lg font-bold uppercase tracking-wider hover:bg-slate-800 cursor-pointer">
+                            Got It
+                        </button>
+                    </div>
+                </div>
             </div>
 
             <!-- ================= CASE DETAILS MODAL ================= -->

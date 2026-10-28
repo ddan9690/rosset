@@ -22,36 +22,73 @@ class Show extends Component
 
     public User $user;
     
-    // Modal states
+    // Modal & View states
     public $showAvatarModal = false;
-    public $showEditModal = false;
-    public $showStatusModal = false;
+    public $showFullPictureModal = false;
     public $showRatingInfoModal = false;
-    public $selectedStatus = '';
     public $avatar;
 
-    // Editable profile fields
-    public $first_name;
-    public $last_name;
-    public $email;
+    // Inline Editable Fields
+    public $editingField = null; // 'phone', 'email', 'school', 'school_level'
     public $phone;
+    public $email;
     public $school;
     public $school_level;
 
     public function mount($id)
     {
         $this->user = User::findOrFail($id);
-        $this->fillEditableFields();
+        $this->resetInlineFields();
     }
 
-    public function fillEditableFields()
+    public function resetInlineFields()
     {
-        $this->first_name = $this->user->first_name;
-        $this->last_name = $this->user->last_name;
-        $this->email = $this->user->email;
         $this->phone = $this->user->phone;
+        $this->email = $this->user->email;
         $this->school = $this->user->school;
         $this->school_level = $this->user->school_level;
+        $this->editingField = null;
+    }
+
+    public function editField($field)
+    {
+        $this->resetInlineFields();
+        $this->editingField = $field;
+    }
+
+    public function cancelEdit()
+    {
+        $this->resetInlineFields();
+    }
+
+    public function saveField($field)
+    {
+        if ($field === 'phone') {
+            $this->validate(['phone' => 'required|string|max:20|unique:users,phone,' . $this->user->id]);
+            $this->user->update(['phone' => $this->phone]);
+        } elseif ($field === 'email') {
+            $this->validate(['email' => 'required|email|max:255|unique:users,email,' . $this->user->id]);
+            $this->user->update(['email' => $this->email]);
+        } elseif ($field === 'school') {
+            $this->validate(['school' => 'nullable|string|max:255']);
+            $this->user->update(['school' => $this->school]);
+        } elseif ($field === 'school_level') {
+            $this->validate(['school_level' => 'nullable|in:Primary,Junior,Senior']);
+            $this->user->update(['school_level' => $this->school_level]);
+        }
+
+        $this->editingField = null;
+        session()->flash('message', 'Profile updated successfully.');
+    }
+
+    public function updateStatusFromJS($status)
+    {
+        if (!in_array($status, ['active', 'suspended', 'deregistered'])) {
+            return;
+        }
+
+        $this->user->update(['status' => $status]);
+        session()->flash('message', 'Member status updated to ' . ucfirst($status) . ' successfully.');
     }
 
     public function openAvatarModal()
@@ -66,6 +103,17 @@ class Show extends Component
         $this->reset('avatar');
     }
 
+    public function openFullPictureModal()
+    {
+        $this->showAvatarModal = false;
+        $this->showFullPictureModal = true;
+    }
+
+    public function closeFullPictureModal()
+    {
+        $this->showFullPictureModal = false;
+    }
+
     public function updateAvatar()
     {
         $this->validate([
@@ -77,68 +125,10 @@ class Show extends Component
         }
 
         $path = $this->avatar->store('profile-pictures', 'public');
-
-        $this->user->update([
-            'profile_picture' => $path,
-        ]);
+        $this->user->update(['profile_picture' => $path]);
 
         $this->closeAvatarModal();
         session()->flash('message', 'Profile picture updated successfully.');
-    }
-
-    public function openEditModal()
-    {
-        $this->fillEditableFields();
-        $this->showEditModal = true;
-    }
-
-    public function closeEditModal()
-    {
-        $this->showEditModal = false;
-    }
-
-    public function updateMemberDetails()
-    {
-        $this->validate([
-            'first_name' => 'required|string|max:255',
-            'last_name' => 'required|string|max:255',
-            'email' => 'required|email|max:255|unique:users,email,' . $this->user->id,
-            'phone' => 'required|string|max:20',
-            'school' => 'nullable|string|max:255',
-            'school_level' => 'nullable|in:Primary,Junior,Senior',
-        ]);
-
-        $this->user->update([
-            'first_name' => $this->first_name,
-            'last_name' => $this->last_name,
-            'email' => $this->email,
-            'phone' => $this->phone,
-            'school' => $this->school,
-            'school_level' => $this->school_level,
-        ]);
-
-        $this->closeEditModal();
-        session()->flash('message', 'Member details updated successfully.');
-    }
-
-    public function openStatusModal($status)
-    {
-        $this->selectedStatus = $status;
-        $this->showStatusModal = true;
-    }
-
-    public function updateStatus()
-    {
-        if (!in_array($this->selectedStatus, ['active', 'suspended', 'deregistered'])) {
-            return;
-        }
-
-        $this->user->update([
-            'status' => $this->selectedStatus,
-        ]);
-
-        $this->showStatusModal = false;
-        session()->flash('message', 'Member status updated to ' . ucfirst($this->selectedStatus) . ' successfully.');
     }
 
     public function render(WelfareRatingService $ratingService, BenevolenceClaimEligibilityService $eligibilityService)
@@ -149,7 +139,12 @@ class Show extends Component
         );
 
         $ratingData = $ratingService->calculateRating($this->user);
+        
         $eligibilityError = $eligibilityService->check($this->user);
+        if ($eligibilityError) {
+            $eligibilityError = str_replace(['your ', 'you '], ['the member\'s ', 'the member '], $eligibilityError);
+            $eligibilityError = preg_replace('/(As per [^,]+),\s*the member\'s/i', '$1, the member\'s', $eligibilityError);
+        }
 
         $eligibleCasesQuery = BenevolenceCase::with(['category', 'member'])
             ->whereIn('status', ['active', 'closed', 'suspended']);

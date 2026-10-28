@@ -6,6 +6,7 @@ use App\Models\SolidarityFund;
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceContribution;
 use App\Models\MembershipRequest;
+use App\Services\WelfareRatingService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -23,6 +24,7 @@ class Portal extends Component
     public $isRegistrationPaid = false;
     public $isProfileComplete = false;
     public $solidarityBalance = 0;
+    public $welfareRatingScore = 0;
 
     // Search and Sort properties for Benevolence Cases
     public $search = '';
@@ -38,7 +40,7 @@ class Portal extends Component
         $this->resetPage();
     }
 
-    public function mount()
+    public function mount(WelfareRatingService $ratingService)
     {
         if (!Auth::check()) {
             return redirect()->route('login');
@@ -82,6 +84,10 @@ class Portal extends Component
         ]);
 
         $this->solidarityBalance = $wallet->balance ?? 0;
+
+        // Calculate Member Welfare Rating Score
+        $ratingData = $ratingService->calculateRating($user);
+        $this->welfareRatingScore = $ratingData['score'] ?? 0;
     }
 
     public function redirectToPayment()

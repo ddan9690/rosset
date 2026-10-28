@@ -26,15 +26,12 @@ class WelfareRatingService
         $eligibleCases = $eligibleQuery->where('user_id', '!=', $user->id)->get();
         $totalEligibleCount = $eligibleCases->count();
 
+        // If no eligible cases exist (e.g., brand new member), default score is 0%
         if ($totalEligibleCount === 0) {
             return [
-                'score' => 100,
-                'tier' => 'Exemplary Pillar',
-                'badge_color' => 'bg-emerald-50 text-emerald-800 border-emerald-300',
+                'score' => 0,
                 'total_eligible' => 0,
                 'contributed_count' => 0,
-                'punctual_count' => 0,
-                'solidarity_bonus' => 0,
             ];
         }
 
@@ -43,7 +40,6 @@ class WelfareRatingService
             ->keyBy('benevolence_case_id');
 
         $contributedCount = 0;
-        $punctualCount = 0;
         $totalEarnedPoints = 0;
 
         foreach ($eligibleCases as $case) {
@@ -54,7 +50,6 @@ class WelfareRatingService
                 $deadline = $case->deadline ? \Carbon\Carbon::parse($case->deadline) : null;
 
                 if ($deadline && $paidAt && $paidAt->lessThanOrEqualTo($deadline->endOfDay())) {
-                    $punctualCount++;
                     $totalEarnedPoints += 1.0; 
                 } else {
                     $totalEarnedPoints += 0.7; 
@@ -81,29 +76,10 @@ class WelfareRatingService
 
         $finalScore = (int) min(100, max(0, round($baseScore + $solidarityBonus)));
 
-        // Welfare-themed Tiering & Conditional Colors
-        if ($finalScore >= 90) {
-            $tier = 'Exemplary Pillar';
-            $badgeColor = 'bg-emerald-50 text-emerald-800 border-emerald-300';
-        } elseif ($finalScore >= 75) {
-            $tier = 'Reliable Contributor';
-            $badgeColor = 'bg-blue-50 text-blue-800 border-blue-300';
-        } elseif ($finalScore >= 50) {
-            $tier = 'Active Member';
-            $badgeColor = 'bg-amber-50 text-amber-800 border-amber-300';
-        } else {
-            $tier = 'At-Risk Status';
-            $badgeColor = 'bg-red-50 text-red-800 border-red-300';
-        }
-
         return [
             'score' => $finalScore,
-            'tier' => $tier,
-            'badge_color' => $badgeColor,
             'total_eligible' => $totalEligibleCount,
             'contributed_count' => $contributedCount,
-            'punctual_count' => $punctualCount,
-            'solidarity_bonus' => $solidarityBonus,
         ];
     }
 }
