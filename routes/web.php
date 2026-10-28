@@ -1,22 +1,22 @@
 <?php
 
 use App\Http\Controllers\KcbWebhookController;
+use App\Http\Controllers\PDF\AgmPaymentsPdfController;
 use App\Http\Controllers\PDF\BenevolenceCasePdfController;
 use App\Http\Controllers\PDF\MemberContributionsPdfController;
 use App\Http\Controllers\PDF\TransactionsPdfController;
 use App\Http\Middleware\UpdateUserLastActive;
+use App\Livewire\Admin\AgmPayments\Index as AgmPaymentsIndex;
+use App\Livewire\Admin\AgmPayments\Show as AgmPaymentsShow;
 use App\Livewire\Admin\BenevolenceCases\Create as BenevolenceCaseCreate;
 use App\Livewire\Admin\BenevolenceCases\Edit as BenevolenceCaseEdit;
 use App\Livewire\Admin\BenevolenceCases\Index as BenevolenceCaseIndex;
 use App\Livewire\Admin\BenevolenceCases\Show as BenevolenceCaseShow;
 use App\Livewire\Admin\BenevolenceCategories;
+use App\Livewire\Admin\BenevolenceClaims as AdminBenevolenceClaims;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ManageMembershipRequests;
 use App\Livewire\Admin\MemberOnboard;
-use App\Livewire\Admin\Members\Create as MemberCreate;
-use App\Livewire\Admin\Members\Edit as MemberEdit;
-use App\Livewire\Admin\Members\Index as MemberIndex;
-use App\Livewire\Admin\Members\Show as MemberShow;
 use App\Livewire\Admin\Roles;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\Transactions;
@@ -30,6 +30,7 @@ use App\Livewire\Frontend\Home;
 use App\Livewire\Frontend\PrivacyPolicy;
 use App\Livewire\Frontend\TermsAndConditions;
 use App\Livewire\Frontend\Updates;
+use App\Livewire\MemberBenevolenceClaims;
 use App\Livewire\MemberProfile;
 use App\Livewire\Portal;
 use App\Livewire\RegistrationFee;
@@ -76,6 +77,10 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:access portal')
         ->name('portal');
 
+    Route::get('/portal/claims', MemberBenevolenceClaims::class)
+        ->middleware('permission:access portal')
+        ->name('member.claims');
+
     Route::get('/portal/solidarity', SolidarityFund::class)
         ->middleware('permission:view solidarity fund')
         ->name('member.solidarity');
@@ -108,24 +113,28 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:manage benevolence categories')
         ->name('admin.benevolence.categories');
 
+    Route::get('/admin/benevolence/claims', AdminBenevolenceClaims::class)
+        ->middleware('permission:view benevolence cases')
+        ->name('admin.benevolence.claims');
+
     Route::get('/admin/membership-requests', ManageMembershipRequests::class)
         ->middleware('permission:manage membership requests')
         ->name('admin.membership-requests');
 
-    // Members Management Routes (CRUD Architecture)
-    Route::get('/admin/members', MemberIndex::class)
+    // Members Management Routes (Fully Qualified Classes)
+    Route::get('/admin/members', \App\Livewire\Admin\Members\Index::class)
         ->middleware('permission:view members')
         ->name('admin.members');
 
-    Route::get('/admin/members/create', MemberCreate::class)
+    Route::get('/admin/members/create', \App\Livewire\Admin\Members\Create::class)
         ->middleware('permission:create members')
         ->name('admin.members.create');
 
-    Route::get('/admin/members/{id}', MemberShow::class)
+    Route::get('/admin/members/{id}', \App\Livewire\Admin\Members\Show::class)
         ->middleware('permission:show members')
         ->name('admin.members.show');
 
-    Route::get('/admin/members/{id}/edit', MemberEdit::class)
+    Route::get('/admin/members/{id}/edit', \App\Livewire\Admin\Members\Edit::class)
         ->middleware('permission:edit members')
         ->name('admin.members.edit');
 
@@ -146,6 +155,15 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:show benevolence cases')
         ->name('admin.benevolence.cases.show');
 
+    // Annual AGM Payments Management Routes
+    Route::get('/admin/agm-payments', AgmPaymentsIndex::class)
+        ->middleware('permission:view transactions')
+        ->name('admin.agm.index');
+
+    Route::get('/admin/agm-payments/{id}/{year}', AgmPaymentsShow::class)
+        ->middleware('permission:view transactions')
+        ->name('admin.agm.show');
+
     // Gateway Transactions Route
     Route::get('/admin/transactions', Transactions::class)
         ->middleware('permission:view transactions')
@@ -160,6 +178,10 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         Route::get('/benevolence/cases/{id}/{slug}', [BenevolenceCasePdfController::class, 'download'])
             ->middleware('permission:download reports')
             ->name('benevolence-case');
+
+        Route::get('/agm-payments/{year}/download', [AgmPaymentsPdfController::class, 'download'])
+            ->middleware('permission:download reports')
+            ->name('agm-payments');
     });
 
     // System Roles & Settings Routes (Restricted primarily to Super Admin)

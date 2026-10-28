@@ -83,7 +83,7 @@ class ManageMembershipRequests extends Component
                         ->orWhere('phone', 'like', $term);
                 });
             })
-            ->oldest()
+            ->latest() // Displays latest received first
             ->paginate(30);
 
         return view('livewire.admin.manage-membership-requests', [

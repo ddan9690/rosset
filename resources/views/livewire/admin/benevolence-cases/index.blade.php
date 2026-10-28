@@ -1,5 +1,18 @@
 <div class="space-y-6">
 
+    <!-- ================= CONSTITUTIONAL WAITING PERIOD ERROR ALERT ================= -->
+    @if (session()->has('error'))
+        <div class="bg-red-50 border border-red-200 text-red-900 text-xs px-5 py-4 rounded-xl font-medium flex items-center justify-between shadow-xs">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="alert-triangle" class="w-5 h-5 text-red-600 flex-shrink-0"></i>
+                <div>
+                    <p class="font-bold uppercase tracking-wider text-red-800">Action Blocked: Constitutional Waiting Period</p>
+                    <p class="text-red-700 mt-0.5 leading-relaxed">{{ session('error') }}</p>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <!-- ================= SOLIDARITY SETTLEMENT NOTIFICATION ALERT ================= -->
     @if(session()->has('solidarity_settled'))
         @php $data = session('solidarity_settled'); @endphp

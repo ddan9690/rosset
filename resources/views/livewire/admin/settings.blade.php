@@ -217,6 +217,35 @@
             </div>
         </div>
 
+        <!-- 7. Max Missed Benevolence Cases for Defaulting -->
+        <div class="bg-white p-5 sm:p-6 rounded-xl shadow-xs border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div class="space-y-1">
+                <p class="text-xs sm:text-sm font-bold text-slate-700">Max Missed Benevolence Cases Before Defaulting</p>
+                <p class="text-xs text-slate-400">Number of missed benevolence/bereavement contributions allowed before a member is marked as a defaulter.</p>
+            </div>
+            <div class="flex items-center justify-between sm:justify-end gap-4 border-t sm:border-t-0 pt-3 sm:pt-0 border-slate-100">
+                @if($editingField === 'max_missed_benevolence_cases')
+                    <div class="flex items-center gap-2">
+                        <input type="number" min="1" wire:model="max_missed_benevolence_cases" class="w-28 px-3 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#2EA3F2]" placeholder="Count">
+                        <button wire:click="updateSetting('max_missed_benevolence_cases')" class="px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-xs font-bold hover:bg-emerald-700 transition">Save</button>
+                        <button wire:click="cancelEdit" class="px-3 py-1.5 bg-slate-200 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-300 transition">Cancel</button>
+                    </div>
+                    @error('max_missed_benevolence_cases') <span class="text-red-500 text-[11px] block">{{ $message }}</span> @enderror
+                @else
+                    <span class="text-xl font-extrabold" style="color: #0E3A59;">
+                        @if($settings && $settings->max_missed_benevolence_cases !== null)
+                            {{ $settings->max_missed_benevolence_cases }} {{ Str::plural('Case', $settings->max_missed_benevolence_cases) }}
+                        @else
+                            <span class="text-slate-400 font-normal italic text-sm">Not Set</span>
+                        @endif
+                    </span>
+                    <button wire:click="edit('max_missed_benevolence_cases')" class="text-xs font-bold text-[#2EA3F2] hover:underline flex items-center gap-1">
+                        <i data-lucide="edit-3" class="w-3.5 h-3.5"></i> Update
+                    </button>
+                @endif
+            </div>
+        </div>
+
     </div>
 
 </div>

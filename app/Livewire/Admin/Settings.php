@@ -18,6 +18,7 @@ class Settings extends Component
     public $agm_contribution_fee;
     public $late_registration_waiting_period_days;
     public $defaulting_waiting_period_days;
+    public $max_missed_benevolence_cases;
     public $solidarity_max_balance;
     
     // Separated deadline properties
@@ -37,6 +38,7 @@ class Settings extends Component
             $this->agm_contribution_fee = $settings?->agm_contribution_fee;
             $this->late_registration_waiting_period_days = $settings?->late_registration_waiting_period_days;
             $this->defaulting_waiting_period_days = $settings?->defaulting_waiting_period_days;
+            $this->max_missed_benevolence_cases = $settings?->max_missed_benevolence_cases ?? 1;
             $this->solidarity_max_balance = $settings?->solidarity_max_balance;
         }
         
@@ -84,6 +86,7 @@ class Settings extends Component
                 'agm_contribution_fee' => 'required|integer|min:0',
                 'late_registration_waiting_period_days' => 'required|integer|min:0',
                 'defaulting_waiting_period_days' => 'required|integer|min:0',
+                'max_missed_benevolence_cases' => 'required|integer|min:1',
                 'solidarity_max_balance' => 'required|integer|min:0',
             ];
 

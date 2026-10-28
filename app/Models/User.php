@@ -40,7 +40,7 @@ class User extends Authenticatable
         'last_login_at',
         'last_active_at',
     ];
-    
+
     protected $hidden = [
         'password',
         'remember_token',
@@ -60,10 +60,15 @@ class User extends Authenticatable
         ];
     }
 
-    /** * User's Solidarity Fund wallet. */ 
+    /** * User's Solidarity Fund wallet. */
     public function solidarityFund()
     {
         return $this->hasOne(SolidarityFund::class, 'user_id');
+    }
+
+    public function benevolenceContributions()
+    {
+        return $this->hasMany(BenevolenceContribution::class, 'user_id');
     }
 
     /**

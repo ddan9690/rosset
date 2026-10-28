@@ -89,18 +89,6 @@ class Portal extends Component
         return redirect()->route('register.fee');
     }
 
-    public function sendContribution($caseId)
-    {
-        return redirect()->route('benevolence.contribute', [
-            'id' => $caseId,
-        ]);
-    }
-
-    public function downloadContributionsPdf()
-    {
-        return redirect()->route('portal.pdf.contributions');
-    }
-
     public function render()
     {
         $user = Auth::user();
@@ -108,6 +96,11 @@ class Portal extends Component
         // Build Query for Benevolence Cases with Search & Sorting
         $query = BenevolenceCase::with(['member', 'category'])
             ->whereIn('status', ['active', 'closed']);
+
+        // Only show cases created on or after the member's joined_at timestamp
+        if ($user->joined_at) {
+            $query->where('created_at', '>=', $user->joined_at);
+        }
 
         // Search filter (Case Number or Member's First/Last Name)
         if (!empty($this->search)) {
@@ -145,15 +138,8 @@ class Portal extends Component
             return $case;
         });
 
-        $contributionHistory = BenevolenceContribution::query()
-            ->with(['benevolenceCase.member'])
-            ->where('user_id', $user->id)
-            ->latest('created_at')
-            ->get();
-
         return view('livewire.portal', [
             'benevolenceCases' => $benevolenceCases,
-            'contributionHistory' => $contributionHistory,
         ]);
     }
 }

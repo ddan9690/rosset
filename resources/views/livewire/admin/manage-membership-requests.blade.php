@@ -33,13 +33,13 @@
                     <tr>
                         <th class="py-3 px-3">#</th>
                         <th class="py-3 px-3">Date</th>
-                        <th class="py-3 px-3">Applicant Name</th>
+                        <th class="py-3 px-3">Applicant</th>
+                        <th class="py-3 px-3 text-center">Profile Picture</th>
                         <th class="py-3 px-3">Phone</th>
                         <th class="py-3 px-3">TSC No.</th>
                         <th class="py-3 px-3">Gender</th>
                         <th class="py-3 px-3">School Level</th>
                         <th class="py-3 px-3">School</th>
-                        <th class="py-3 px-3 text-center">Profile Picture</th>
                         <th class="py-3 px-3">Status</th>
                         <th class="py-3 px-3 text-right">Actions</th>
                     </tr>
@@ -51,6 +51,15 @@
                             <td class="py-3 px-3 text-slate-500 font-mono uppercase">{{ $req->created_at->format('d-M-y') }}</td>
                             <td class="py-3 px-3 font-medium text-slate-900">
                                 {{ trim(($req->user->first_name ?? '') . ' ' . ($req->user->last_name ?? '')) }}
+                            </td>
+                            <td class="py-3 px-3 text-center">
+                                @if($req->user && $req->user->profile_picture)
+                                    <button type="button" wire:click="viewImage('{{ asset('storage/' . $req->user->profile_picture) }}')" class="inline-block focus:outline-none group">
+                                        <img src="{{ asset('storage/' . $req->user->profile_picture) }}" alt="Profile" class="w-9 h-9 object-cover rounded-lg border border-slate-200 shadow-2xs group-hover:scale-105 transition">
+                                    </button>
+                                @else
+                                    <span class="inline-flex items-center justify-center w-9 h-9 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-bold">N/A</span>
+                                @endif
                             </td>
                             <td class="py-3 px-3 font-mono text-slate-600">{{ $req->user->phone ?? 'N/A' }}</td>
                             <td class="py-3 px-3 font-mono text-slate-600">{{ $req->user->tsc_number ?? 'N/A' }}</td>
@@ -65,15 +74,6 @@
                             </td>
                             <td class="py-3 px-3 text-slate-600">{{ $req->user->school_level ?? 'N/A' }}</td>
                             <td class="py-3 px-3 text-slate-600">{{ $req->user->school ?? 'N/A' }}</td>
-                            <td class="py-3 px-3 text-center">
-                                @if($req->user && $req->user->profile_picture)
-                                    <button type="button" wire:click="viewImage('{{ asset('storage/' . $req->user->profile_picture) }}')" class="inline-block focus:outline-none group">
-                                        <img src="{{ asset('storage/' . $req->user->profile_picture) }}" alt="Profile" class="w-9 h-9 object-cover rounded-lg border border-slate-200 shadow-2xs group-hover:scale-105 transition">
-                                    </button>
-                                @else
-                                    <span class="inline-flex items-center justify-center w-9 h-9 bg-slate-100 text-slate-400 rounded-lg text-[10px] font-bold">N/A</span>
-                                @endif
-                            </td>
                             <td class="py-3 px-3">
                                 @if($req->status === 'pending')
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">

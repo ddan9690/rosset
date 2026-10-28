@@ -5,7 +5,9 @@ namespace App\Livewire\Admin\BenevolenceCases;
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceCategory;
 use App\Models\User;
+use App\Services\BenevolenceClaimEligibilityService;
 use App\Services\BenevolenceSettlementService;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
@@ -47,7 +49,7 @@ class Create extends Component
     {
         $this->selectedMember = User::find($id);
         if ($this->selectedMember) {
-            $this->user_id = $this->selectedMember->id;
+            $this->user_id =$this->selectedMember->id;
             $this->searchMember = '';
         }
     }
@@ -56,15 +58,28 @@ class Create extends Component
     {
         $this->selectedMember = null;
         $this->user_id = '';
-        $this->benevolence_category_id = '';
-        $this->case_details = '';
-        $this->deadline = '';
-        $this->auto_settle = true;
+        $this->benevolence_category_id = '';$this->case_details = '';
+        $this->deadline = '';$this->auto_settle = true;
     }
 
-    public function save()
+    public function save(BenevolenceClaimEligibilityService $eligibilityService)
     {
         $this->validate();
+
+        if (!$this->selectedMember) {
+            $this->selectedMember = User::find($this->user_id);
+        }
+
+        if ($this->selectedMember) {
+            // Reuse the constitutional eligibility service to verify the member
+            $eligibilityError = $eligibilityService->check($this->selectedMember);
+            
+            if ($eligibilityError) {$memberName = trim(($this->selectedMember->first_name ?? '') . ' ' . ($this->selectedMember->last_name ?? ''));
+                
+                session()->flash('error', "Cannot open a benevolence case for {$memberName}. {$eligibilityError}");
+                return redirect()->route('admin.benevolence.cases.index');
+            }
+        }
 
         $this->isProcessing = true;
         $memberName = trim(($this->selectedMember->first_name ?? 'Member') . ' ' . ($this->selectedMember->last_name ?? ''));
@@ -82,10 +97,9 @@ class Create extends Component
         $this->progressMessage = "Generating secure case sequence and unique identifiers...";
         usleep(350000);
 
-        $latestCase = BenevolenceCase::latest('id')->first();
-        $globalSequence = $latestCase ? $latestCase->id + 1 : 1;
-        $caseNumber = $membershipNo . '/' . $globalSequence;
-        $slug = Str::slug($memberName . '-' . $membershipNo . '-' . $globalSequence);
+        $latestCase = BenevolenceCase::latest('id')->first();$globalSequence = $latestCase ? $latestCase->id + 1 : 1;
+        $caseNumber = $membershipNo . '/' .$globalSequence;
+        $slug = Str::slug($memberName . '-' . $membershipNo . '-' .$globalSequence);
 
         $this->progressPercentage = 60;
         $this->progressMessage = "Persisting benevolence case record ({$caseNumber})...";
@@ -109,20 +123,16 @@ class Create extends Component
         // =========================================================================
         // STEP 2: SOLIDARITY FUND DEDUCTIONS (IF ENABLED)
         // =========================================================================
-        if ($this->auto_settle) {
-            $this->activeStep = 2;
+        if ($this->auto_settle) {$this->activeStep = 2;
             $this->progressPercentage = 0;
             $this->progressMessage = "Scanning active wallets for eligible member contributions...";
             usleep(300000);
 
             $service = new BenevolenceSettlementService();
             
-            $this->settledCount = $service->settleEligibleMembers($case, function ($current, $total, $msg) {
-                $this->progressMessage = $msg;
-                $this->progressPercentage = 10 + (int)(($current / max($total, 1)) * 85);
-            });
-        } else {
-            $this->activeStep = 2;
+            $this->settledCount =$service->settleEligibleMembers($case, function ($current, $total,$msg) {
+                $this->progressMessage =$msg;
+                $this->progressPercentage = 10 + (int)(($current / max($total, 1)) * 85); }); } else {$this->activeStep = 2;
             $this->progressPercentage = 100;
             $this->progressMessage = "Auto-settlement skipped as requested.";
         }
@@ -149,7 +159,7 @@ class Create extends Component
     {
         $members = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $members = User::where('first_name', 'like', '%' . $this->searchMember . '%')
+            $members = User::where('first_name', 'like', '\%' .$this->searchMember . '%')
                 ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
                 ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
                 ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')

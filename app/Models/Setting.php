@@ -16,6 +16,7 @@ class Setting extends Model
         'registration_deadline_day',
         'late_registration_waiting_period_days',
         'defaulting_waiting_period_days',
+        'max_missed_benevolence_cases',
         'solidarity_max_balance',
     ];
 
@@ -31,6 +32,7 @@ class Setting extends Model
             'registration_deadline_day' => 28,
             'late_registration_waiting_period_days' => 30,
             'defaulting_waiting_period_days' => 90,
+            'max_missed_benevolence_cases' => 1,
         ]);
     }
 }

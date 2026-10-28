@@ -1,15 +1,11 @@
-<div class="min-h-screen bg-slate-50 py-8" @if ($stkSent) wire:poll.3s="checkPaymentStatus" @endif>
+<div class="min-h-screen bg-slate-50 py-8">
     <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
 
         <!-- Navigation Bar -->
         <div class="flex items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-3 shadow-2xs">
-            @if(!$stkSent)
-                <a href="{{ route('portal') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1">
-                    <span>&larr; Back to Portal</span>
-                </a>
-            @else
-                <span class="text-xs font-bold text-slate-400">Transaction in Progress...</span>
-            @endif
+            <a href="{{ route('portal') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline flex items-center space-x-1">
+                <span>&larr; Back to Portal</span>
+            </a>
             <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Member Solidarity Fund</span>
         </div>
 
@@ -17,25 +13,6 @@
             <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs px-4 py-3 rounded-lg font-medium flex items-center space-x-2">
                 <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
                 <span>{{ session('message') }}</span>
-            </div>
-        @endif
-
-        @if($stkSent)
-            <!-- WAITING FOR PAYMENT BANNER -->
-            <div class="bg-blue-50 border border-blue-200 rounded-2xl p-6 shadow-sm text-center space-y-4 max-w-lg mx-auto">
-                <div class="flex justify-center">
-                    <div class="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                        <i data-lucide="smartphone" class="w-6 h-6 text-blue-600 animate-pulse"></i>
-                    </div>
-                </div>
-                <div>
-                    <h4 class="text-sm font-bold text-blue-900">Waiting for M-Pesa Payment Confirmation</h4>
-                    <p class="text-xs text-blue-800 mt-1">An STK push prompt has been sent to <span class="font-mono font-bold">{{ $phone }}</span>.</p>
-                </div>
-                <div class="flex items-center justify-center gap-2 text-xs text-blue-700 font-medium">
-                    <i data-lucide="loader-circle" class="w-4 h-4 animate-spin"></i>
-                    <span>Polling payment status automatically...</span>
-                </div>
             </div>
         @endif
 
@@ -54,7 +31,7 @@
                 </div>
                 <button wire:click="openTopUpModal" class="px-4 py-2 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-xs bg-[#2EA3F2] hover:bg-sky-500 cursor-pointer flex items-center space-x-1">
                     <i data-lucide="plus" class="w-3.5 h-3.5"></i>
-                    <span>Top-up</span>
+                    <span>Top-up Guide</span>
                 </button>
             </div>
         </div>
@@ -136,48 +113,48 @@
             </div>
         @endif
 
-        <!-- ================= TOP-UP MODAL ================= -->
+        <!-- ================= TOP-UP GUIDE MODAL ================= -->
         @if($showTopUpModal)
             <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs px-4">
-                <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-6">
+                <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl space-y-5">
                     
                     <div class="flex items-center justify-between border-b border-slate-200 pb-4">
-                        <h3 class="font-bold text-sm uppercase tracking-wider text-slate-900">Top-up Solidarity Wallet</h3>
-                        <button type="button" wire:click="closeModal" wire:loading.attr="disabled" wire:target="topUpWallet" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">✕</button>
+                        <h3 class="font-bold text-sm uppercase tracking-wider text-slate-900">Solidarity Wallet Top-up Guide</h3>
+                        <button type="button" wire:click="closeModal" class="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer">✕</button>
                     </div>
 
-                    <form wire:submit="topUpWallet" class="space-y-4">
-                        <p class="text-xs text-slate-600 leading-relaxed">
-                            An STK push will be sent to your phone number to complete the top-up. (Maximum allowed balance: <strong class="font-mono">Ksh {{ number_format($maxLimit, 0) }}</strong>)
+                    <div class="space-y-3 text-xs text-slate-700 leading-relaxed">
+                        <p>
+                            To top up your solidarity fund virtual balance, please follow the manual payment steps below:
                         </p>
 
-                        <div>
-                            <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Amount (KSH)</label>
-                            <input type="number" wire:model="amount" placeholder="e.g. 500" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none bg-white">
-                            @error('amount') <span class="text-red-500 text-[10px] mt-1 block">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <div class="flex items-center justify-between mb-1">
-                                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">M-Pesa Phone Number</label>
-                                <button type="button" wire:click="togglePhoneEditable" wire:loading.attr="disabled" wire:target="topUpWallet" class="text-[11px] font-bold text-[#2EA3F2] hover:underline cursor-pointer disabled:opacity-50">
-                                    {{ $isPhoneEditable ? 'Use my number' : 'Change' }}
-                                </button>
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2.5 font-mono text-[11px]">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500 font-bold">Paybill Number:</span>
+                                <span class="text-slate-900 font-bold">522533</span>
                             </div>
-                            <input type="text" wire:model="phone" @if(!$isPhoneEditable) disabled @endif class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none {{ $isPhoneEditable ? 'bg-white' : 'bg-slate-100 text-slate-500 cursor-not-allowed' }}">
-                            @error('phone') <span class="text-red-500 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                            <div class="flex justify-between items-start">
+                                <span class="text-slate-500 font-bold">Account Number:</span>
+                                <span class="text-slate-900 font-bold text-right">7936435#&lt;member_no&gt;<br><span class="text-[10px] text-slate-400 font-normal">(e.g., 7936435#121 for Member No. 121)</span></span>
+                            </div>
                         </div>
 
-                        <div class="flex items-center justify-end space-x-3 pt-2">
-                            <button type="button" wire:click="closeModal" wire:loading.attr="disabled" wire:target="topUpWallet" class="px-4 py-2.5 rounded-lg bg-slate-200 text-slate-700 font-bold text-xs hover:bg-slate-300 transition cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
-                                Cancel
-                            </button>
-                            <button type="submit" wire:loading.attr="disabled" class="px-5 py-2.5 rounded-lg text-white font-bold text-xs uppercase tracking-wider transition shadow-xs bg-[#2EA3F2] hover:bg-sky-500 cursor-pointer flex items-center justify-center space-x-1.5 disabled:opacity-50">
-                                <span wire:loading.remove wire:target="topUpWallet">Send STK Push</span>
-                                <span wire:loading wire:target="topUpWallet">Please Wait...</span>
-                            </button>
+                        <div class="bg-sky-50 border border-sky-200 rounded-xl p-4 text-sky-900 space-y-1.5 font-medium">
+                            <p class="font-bold uppercase tracking-wider text-[10px] text-sky-800">Next Step (Important):</p>
+                            <p>
+                                Once you have completed the M-Pesa payment, please send the confirmation message to Treasurer <strong>Mr. Josephine</strong> via phone number <strong class="font-mono">0711317235</strong>.
+                            </p>
+                            <p class="text-sky-700 italic">
+                                Kindly inform the treasurer explicitly that the money is strictly for your <strong>Solidarity Fund</strong>.
+                            </p>
                         </div>
-                    </form>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button type="button" wire:click="closeModal" class="px-5 py-2.5 rounded-lg bg-[#2EA3F2] text-white font-bold text-xs uppercase tracking-wider hover:bg-sky-500 transition cursor-pointer shadow-xs">
+                            Close Guide
+                        </button>
+                    </div>
 
                 </div>
             </div>
@@ -192,59 +169,5 @@
     });
     document.addEventListener('DOMContentLoaded', () => { 
         if (window.lucide) { window.lucide.createIcons(); }
-    });
-
-    window.addEventListener('stk-sent', event => {
-        const detail = event.detail?.[0] ?? event.detail ?? {};
-        const formattedAmount = Number(detail.amount ?? 0).toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 0});
-
-        Swal.fire({ 
-            title: 'STK Push Sent!', 
-            html: 'Check your phone (<strong>' + (detail.phone ?? '') + '</strong>) and enter your M-Pesa PIN to complete the top-up.<br><br>' +
-                  '<div style="background-color: #fef3c7; border: 1px solid #fde68a; padding: 10px; border-radius: 6px; text-align: left; font-size: 13px; color: #92400e;">' +
-                  '<strong>Please Note:</strong> This process may take up to <strong>40 seconds</strong>. Please be patient, and <strong>do not close or refresh this page</strong>.' +
-                  '</div>',
-            icon: 'info', 
-            showConfirmButton: false, 
-            allowOutsideClick: false
-        });
-    });
-
-    window.addEventListener('exceeds-limit', event => {
-        const detail = event.detail?.[0] ?? event.detail ?? {};
-        const maxLimit = Number(detail.max ?? 1000).toLocaleString();
-        
-        Swal.fire({
-            title: 'Maximum Limit Exceeded',
-            text: 'You can only have a maximum of Ksh ' + maxLimit + ' in your solidarity fund.',
-            icon: 'warning',
-            confirmButtonColor: '#2EA3F2',
-            confirmButtonText: 'Got It'
-        });
-    });
-
-    window.addEventListener('payment-successful', () => {
-        Swal.close();
-        Swal.fire({
-            title: 'Payment Successful!',
-            text: 'Wallet top-up confirmed successfully!',
-            icon: 'success',
-            timer: 2500,
-            timerProgressBar: true,
-            showConfirmButton: false,
-            allowOutsideClick: false
-        });
-    });
-
-    window.addEventListener('stk-error', event => {
-        Swal.close();
-        const detail = event.detail?.[0] ?? event.detail ?? {};
-        Swal.fire({ 
-            title: 'Payment Request Failed', 
-            text: detail.message ?? 'Sorry, payment is not successful. Please try again.', 
-            icon: 'error',
-            confirmButtonColor: '#2EA3F2',
-            confirmButtonText: 'Try Again'
-        });
     });
 </script>
