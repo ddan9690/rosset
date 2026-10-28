@@ -66,11 +66,33 @@ class Show extends Component
 
     public function selectMember($id)
     {
-        $this->selectedMember = User::find($id);
-        if ($this->selectedMember) {
-            $this->user_id = $this->selectedMember->id;
-            $this->searchMember = '';
+        $member = User::find($id);
+        
+        if (!$member) {
+            return;
         }
+
+        // Check if this member has already contributed to this benevolence case
+        $alreadyContributed = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
+            ->where('user_id', $member->id)
+            ->exists();
+
+        if ($alreadyContributed) {
+            $memberName = trim("{$member->first_name} {$member->last_name}");
+            $memberNo = $member->membership_number ?? $member->tsc_number ?? 'N/A';
+            
+            $this->closeCaptureModal();
+            
+            $this->dispatch('swal:warning', [
+                'title' => 'Already Contributed',
+                'message' => "{$memberName} (Mem No. {$memberNo}) has already contributed towards the case.",
+            ]);
+            return;
+        }
+
+        $this->selectedMember = $member;
+        $this->user_id = $member->id;
+        $this->searchMember = '';
     }
 
     public function clearSelectedMember()
@@ -92,17 +114,72 @@ class Show extends Component
         ]);
 
         $user = User::findOrFail($this->user_id);
+
+        // Safeguard duplicate check
+        $alreadyContributed = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
+            ->where('user_id', $user->id)
+            ->exists();
+
+        if ($alreadyContributed) {
+            $memberName = trim("{$user->first_name} {$user->last_name}");
+            $memberNo = $user->membership_number ?? $user->tsc_number ?? 'N/A';
+            
+            $this->closeCaptureModal();
+            $this->dispatch('swal:warning', [
+                'title' => 'Already Contributed',
+                'message' => "{$memberName} (Mem No. {$memberNo}) has already contributed towards the case.",
+            ]);
+            return;
+        }
+
+        $expectedAmount = (float) ($this->case->category->amount ?? 0);
+        $inputAmount = (float) $this->amount;
+
+        // Check if the amount entered is greater than the required category amount
+        if ($expectedAmount > 0 && $inputAmount > $expectedAmount) {
+            $excessAmount = $inputAmount - $expectedAmount;
+            $memberName = trim("{$user->first_name} {$user->last_name}");
+
+            $this->dispatch('swal:confirm-excess', [
+                'title' => 'Excess Amount Entered',
+                'message' => "The amount entered (Ksh " . number_format($inputAmount, 0) . ") is more than the amount needed for this case (Ksh " . number_format($expectedAmount, 0) . "). Do you want to credit the remaining balance of Ksh " . number_format($excessAmount, 0) . " to {$memberName}'s Solidarity Fund?",
+                'excessAmount' => $excessAmount,
+                'expectedAmount' => $expectedAmount,
+            ]);
+            return;
+        }
+
+        $this->processPaymentExecution($user, $inputAmount, 0);
+    }
+
+    public function confirmSaveWithExcess()
+    {
+        if (!$this->user_id) {
+            return;
+        }
+
+        $user = User::findOrFail($this->user_id);
+        $expectedAmount = (float) ($this->case->category->amount ?? 0);
+        $inputAmount = (float) $this->amount;
+        $excessAmount = max(0, $inputAmount - $expectedAmount);
+
+        $this->processPaymentExecution($user, $expectedAmount, $excessAmount);
+    }
+
+    private function processPaymentExecution(User $user, float $benevolenceAmount, float $excessAmount)
+    {
         $admin = Auth::user();
         $ref = !empty($this->referenceNumber) ? strtoupper(trim($this->referenceNumber)) : ('BEN-MAN-' . strtoupper(Str::random(6)));
 
         DB::beginTransaction();
 
         try {
+            // 1. Create Benevolence Transaction Record
             $tx = Transaction::create([
                 'user_id' => $user->id,
                 'recorded_by' => $admin->id,
                 'reference_number' => $ref,
-                'amount' => $this->amount,
+                'amount' => $benevolenceAmount,
                 'type' => 'debit',
                 'category' => 'benevolence_contribution',
                 'status' => 'success',
@@ -110,11 +187,12 @@ class Show extends Component
                 'description' => "Manual admin contribution for benevolence case: {$this->case->case_number}",
             ]);
 
+            // 2. Create Benevolence Contribution Record
             BenevolenceContribution::create([
                 'benevolence_case_id' => $this->case->id,
                 'user_id' => $user->id,
                 'transaction_id' => $tx->id,
-                'amount' => $this->amount,
+                'amount' => $benevolenceAmount,
                 'payment_channel' => 'Manual Admin Entry',
                 'reference_number' => $ref,
                 'notes' => $this->notes ?: "Captured manually by Admin {$admin->first_name}",
@@ -123,10 +201,51 @@ class Show extends Component
                 'updated_at' => $this->paid_at . ' ' . date('H:i:s'),
             ]);
 
+            // 3. Handle Excess Top-up to Solidarity Fund
+            if ($excessAmount > 0) {
+                $solidarityRef = 'SOL-OVER-' . strtoupper(Str::random(6));
+                $descriptiveNote = "Excess payment top-up of Ksh " . number_format($excessAmount, 0) . " from Benevolence Case {$this->case->case_number} (Category: " . ($this->case->category->name ?? 'N/A') . ") recorded on " . date('d-M-Y') . " by Admin {$admin->first_name} {$admin->last_name}.";
+
+                // Update or Create Solidarity Wallet
+                $wallet = SolidarityFund::firstOrNew(['user_id' => $user->id]);
+                if (!$wallet->exists) {
+                    $wallet->balance = 0;
+                    $wallet->total_topups = 0;
+                    $wallet->total_deductions = 0;
+                    $wallet->recorded_by = $admin->id;
+                }
+
+                $wallet->balance += $excessAmount;
+                $wallet->total_topups += $excessAmount;
+                $wallet->notes = $descriptiveNote;
+                $wallet->updated_by = $admin->id;
+                $wallet->save();
+
+                // Log Transaction for Excess Solidarity Credit
+                Transaction::create([
+                    'user_id' => $user->id,
+                    'recorded_by' => $admin->id,
+                    'reference_number' => $solidarityRef,
+                    'amount' => $excessAmount,
+                    'type' => 'credit',
+                    'category' => 'solidarity_topup',
+                    'status' => 'success',
+                    'phone_number' => $user->phone ?? 'N/A',
+                    'description' => $descriptiveNote,
+                ]);
+            }
+
             DB::commit();
 
             $this->closeCaptureModal();
-            $this->dispatch('swal:success', ['message' => "Benevolence contribution successfully recorded for {$user->first_name} {$user->last_name}."]);
+
+            $successMsg = "Benevolence contribution successfully recorded for {$user->first_name} {$user->last_name}.";
+            if ($excessAmount > 0) {
+                $successMsg .= " Excess Ksh " . number_format($excessAmount, 0) . " credited to Solidarity Fund.";
+            }
+
+            $this->dispatch('swal:success', ['message' => $successMsg]);
+
         } catch (\Exception $e) {
             DB::rollBack();
             $this->dispatch('swal:error', ['message' => 'Failed to record contribution: ' . $e->getMessage()]);
@@ -256,7 +375,6 @@ class Show extends Component
 
         $totalAmountCollected = $contributions->sum('amount');
 
-        // Strictly query allowed gender enum values ('male', 'female')
         $contributorsByGender = User::whereIn('id', $contributingUserIds)
             ->whereIn('gender', ['male', 'female'])
             ->selectRaw('gender, count(*) as count')
@@ -264,7 +382,6 @@ class Show extends Component
             ->pluck('count', 'gender')
             ->toArray();
 
-        // Strictly query allowed school level options ('Primary', 'Junior', 'Senior')
         $contributorsBySchoolLevel = User::whereIn('id', $contributingUserIds)
             ->whereIn('school_level', ['Primary', 'Junior', 'Senior'])
             ->selectRaw('school_level, count(*) as count')

@@ -1,7 +1,24 @@
 <div class="space-y-6 max-w-5xl mx-auto pb-12"
      x-data="{}"
      @swal:success.window="Swal.fire({ title: 'Success!', text: $event.detail[0].message, icon: 'success', timer: 2500, showConfirmButton: false })"
-     @swal:error.window="Swal.fire({ title: 'Error!', text: $event.detail[0].message, icon: 'error' })">
+     @swal:error.window="Swal.fire({ title: 'Error!', text: $event.detail[0].message, icon: 'error' })"
+     @swal:warning.window="Swal.fire({ title: $event.detail[0].title || 'Warning', text: $event.detail[0].message, icon: 'warning', confirmButtonColor: '#0E3A59', confirmButtonText: 'OK' })"
+     @swal:confirm-excess.window="
+        Swal.fire({
+            title: $event.detail[0].title,
+            text: $event.detail[0].message,
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonColor: '#0E3A59',
+            cancelButtonColor: '#64748b',
+            confirmButtonText: 'Yes, Credit Solidarity Fund',
+            cancelButtonText: 'No, Re-enter Amount'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                $wire.confirmSaveWithExcess();
+            }
+        });
+     ">
 
     <!-- Header Section -->
     <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between bg-white border border-slate-200 rounded-xl px-6 py-4 shadow-xs gap-4">
@@ -87,7 +104,7 @@
         </div>
     </div>
 
-    <!-- Demographics Breakdown (Strictly Male/Female & Primary/Junior/Senior) -->
+    <!-- Demographics Breakdown -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
         <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-xs space-y-2">
             <h4 class="font-bold uppercase tracking-wider text-slate-800 text-[11px]">Contributors by Gender</h4>
@@ -272,7 +289,7 @@
         </div>
     @endif
 
-    <!-- ================= STATUS MODAL (For Active / Closed) ================= -->
+    <!-- ================= STATUS MODAL ================= -->
     @if($showStatusModal)
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs">
             <div class="bg-white rounded-xl shadow-xl border border-slate-200 p-6 max-w-sm w-full space-y-4 text-xs">
@@ -296,7 +313,7 @@
                 <div>
                     <label class="block font-bold uppercase tracking-wider text-slate-700 mb-1">New Deadline Date</label>
                     <input type="date" wire:model="newDeadline" class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#2EA3F2] focus:outline-none bg-white">
-                    @error('newDeadline') <span class="text-red-500 text-[10px] mt-1 block">{{ $message }}</span> @enderror
+                    @error('newDeadline') <span class="text-red-500 text-[10px] mt-1 block font-bold">{{ $message }}</span> @enderror
                 </div>
                 <div class="flex items-center justify-end space-x-2 pt-2">
                     <button type="button" wire:click="$set('showDeadlineModal', false)" class="px-4 py-2 rounded-lg bg-slate-200 text-slate-700 font-bold hover:bg-slate-300 transition cursor-pointer">Cancel</button>
