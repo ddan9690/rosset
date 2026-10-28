@@ -19,6 +19,7 @@ use App\Livewire\Admin\ManageMembershipRequests;
 use App\Livewire\Admin\MemberOnboard;
 use App\Livewire\Admin\Roles;
 use App\Livewire\Admin\Settings;
+use App\Livewire\Admin\SolidarityManagement;
 use App\Livewire\Admin\Transactions;
 use App\Livewire\Auth\Login;
 use App\Livewire\Auth\MembershipStatus;
@@ -108,6 +109,10 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/dashboard', Dashboard::class)
         ->middleware('permission:view dashboard')
         ->name('admin.dashboard');
+
+    Route::get('/admin/solidarity-management', SolidarityManagement::class)
+        ->middleware('permission:view solidarity fund')
+        ->name('admin.solidarity');
 
     Route::get('/admin/benevolence/categories', BenevolenceCategories::class)
         ->middleware('permission:manage benevolence categories')
