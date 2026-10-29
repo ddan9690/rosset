@@ -26,8 +26,8 @@
                     <i data-lucide="clock" class="w-5 h-5"></i>
                 </div>
                 <h3 class="text-sm font-bold text-amber-900">Application Under Review</h3>
-                <p class="text-xs text-amber-800/90 leading-relaxed capitalize-first">
-                    Thank you for being part of ROSSET-SWA community. Your request has been received and is being processed. Kindly be patient and keep checking the page for further information regarding your request.
+                <p class="text-xs text-amber-800/90 leading-relaxed">
+                    Thank you for joining ROSSET-SWA. Your registration request has been received and is pending administrative review. Kindly check back later.
                 </p>
             </div>
         @elseif($status === 'approved')
@@ -37,7 +37,7 @@
                 </div>
                 <h3 class="text-sm font-bold text-emerald-900">Application Approved</h3>
                 <p class="text-xs text-emerald-800/90 leading-relaxed">
-                    Your membership application has been successfully verified and approved by the administration. Please proceed to finalize your registration fee payment.
+                    Your membership application has been successfully verified and approved by the administration. Welcome to ROSSET-SWA!
                 </p>
             </div>
         @else
@@ -56,9 +56,9 @@
     <!-- Actions -->
     <div class="space-y-3 pt-2">
         @if($status === 'approved')
-            <a href="{{ route('register.fee') }}" class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
-                <i data-lucide="credit-card" class="w-4 h-4"></i>
-                Proceed to Registration Fee Payment
+            <a href="{{ route('portal') }}" wire:navigate class="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-sm">
+                <i data-lucide="layout-dashboard" class="w-4 h-4"></i>
+                Go to Member Portal
             </a>
         @endif
     </div>

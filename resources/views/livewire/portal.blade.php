@@ -49,31 +49,31 @@
                     <a href="{{ route('profile.update') }}" wire:navigate
                         class="w-full py-3.5 px-6 rounded-xl text-white font-bold text-xs uppercase tracking-wider transition shadow-sm bg-slate-900 hover:bg-slate-800 cursor-pointer flex items-center justify-center space-x-2">
                         <i data-lucide="arrow-right" class="w-4 h-4"></i>
-                        <span>Update Profile</span>
+                        <span>Profile</span>
                     </a>
                 </div>
             </div>
-        @elseif(!$isRegistrationPaid)
-            <!-- ================= UNPAID REGISTRATION FEE NOTICE ================= -->
+        @elseif (!$hasDependents)
+            <!-- ================= DEPENDENTS UPDATE REQUIRED NOTICE ================= -->
             <div class="bg-white border border-slate-200 rounded-2xl p-8 shadow-xs text-center max-w-md mx-auto space-y-6 my-16">
                 <div class="w-12 h-12 bg-blue-50 text-[#2EA3F2] rounded-full flex items-center justify-center mx-auto">
-                    <i data-lucide="credit-card" class="w-6 h-6"></i>
+                    <i data-lucide="users" class="w-6 h-6"></i>
                 </div>
 
                 <div class="space-y-2">
-                    <h3 class="text-base font-bold text-slate-900">Registration Fee Pending</h3>
+                    <h3 class="text-base font-bold text-slate-900">Dependents Update Required</h3>
                     <p class="text-sm text-slate-700 leading-relaxed font-medium">
                         Dear <strong class="text-slate-900">{{ Auth::user()->first_name ?? 'Member' }}</strong>,
-                        please complete your registration by paying registration fee of <strong class="text-slate-900 font-mono">KSH 150</strong>.
+                        please update your dependents list (Spouse, Parents, or Children) to fully unlock and access your welfare portal.
                     </p>
                 </div>
 
                 <div>
-                    <button wire:click="redirectToPayment" wire:loading.attr="disabled"
-                        class="w-full py-3.5 px-6 rounded-xl text-white font-bold text-xs uppercase tracking-wider transition shadow-sm bg-red-600 hover:bg-red-700 cursor-pointer flex items-center justify-center space-x-2">
-                        <span wire:loading.remove wire:target="redirectToPayment">Pay Registration Fee (KSH 150)</span>
-                        <span wire:loading wire:target="redirectToPayment">Redirecting...</span>
-                    </button>
+                    <a href="{{ route('member.dependants.update') }}" wire:navigate
+                        class="w-full py-3.5 px-6 rounded-xl text-white font-bold text-xs uppercase tracking-wider transition shadow-sm bg-[#0E3A59] hover:bg-opacity-90 cursor-pointer flex items-center justify-center space-x-2">
+                        <i data-lucide="user-plus" class="w-4 h-4"></i>
+                        <span>Update Dependants Now</span>
+                    </a>
                 </div>
             </div>
         @else
@@ -97,10 +97,20 @@
 
                             <span class="text-slate-300">|</span>
 
+                            <!-- Update Profile Link -->
+                            <a href="{{ route('profile.update') }}" wire:navigate
+                                class="text-xs font-semibold text-[#0E3A59] hover:text-slate-900 hover:underline flex items-center space-x-1">
+                                <i data-lucide="user-pen" class="w-3.5 h-3.5"></i>
+                                <span>Profile</span>
+                            </a>
+
+                            <span class="text-slate-300">|</span>
+
+                            <!-- Update Dependents Link -->
                             <a href="{{ route('member.dependants.update') }}" wire:navigate
                                 class="text-xs font-semibold text-[#0E3A59] hover:text-slate-900 hover:underline flex items-center space-x-1">
                                 <i data-lucide="users" class="w-3.5 h-3.5"></i>
-                                <span>update dependants</span>
+                                <span>Dependents</span>
                             </a>
                         </div>
                     </div>
@@ -128,7 +138,7 @@
                         </div>
                         <span class="text-2xl font-extrabold font-mono text-slate-900">{{ $welfareRatingScore }}%</span>
                     </div>
-                    <p class="text-[11px] text-slate-500">Your standing and commitment towards association solidarity and fellowship.</p>
+                    {{-- <p class="text-[11px] text-slate-500">Your standing and commitment towards association solidarity and fellowship.</p> --}}
                 </div>
 
                 <!-- Solidarity Fund Balance Card -->
@@ -275,7 +285,7 @@
                 @endif
             </div>
 
-            <!-- ================= RATING EXPLANATION MODAL (Inspiring Tone) ================= -->
+            <!-- ================= RATING EXPLANATION MODAL ================= -->
             <div x-cloak x-show="showRatingModal"
                 class="fixed inset-0 z-50 overflow-y-auto bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
                 <div @click.away="showRatingModal = false"

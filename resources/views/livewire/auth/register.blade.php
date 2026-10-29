@@ -48,7 +48,7 @@
         </div>
     @else
         <!-- ================= STEP 2: FULL REGISTRATION FORM ================= -->
-        <div x-data="{ showPassword: false }">
+        <div x-data="{ showPassword: false, photoPreview: null }">
             <form wire:submit="register" class="mt-6 space-y-4">
                 
                 <div class="text-xs text-slate-600 font-medium text-center pb-2">
@@ -161,20 +161,27 @@
                     </div>
                 </div>
 
-                <!-- Profile Picture Input -->
+                <!-- Profile Picture Input with Instant Client-Side Preview -->
                 <div>
-                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Profile Picture <span class="text-slate-400 font-normal"></span></label>
-                    <input type="file" wire:model="profile_picture" accept="image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer border border-slate-300 rounded">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">Profile Picture</label>
+                    <input type="file" 
+                           wire:model="profile_picture" 
+                           accept="image/*" 
+                           @change="
+                               const file = $event.target.files[0];
+                               if (file) {
+                                   photoPreview = URL.createObjectURL(file);
+                               }
+                           "
+                           class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-xs file:font-bold file:bg-slate-100 file:text-slate-700 hover:file:bg-slate-200 cursor-pointer border border-slate-300 rounded">
+                    
                     @error('profile_picture') <span class="text-red-500 text-xs mt-1 block">{{ $message }}</span> @enderror
                     
-                    <!-- Live preview indicator if uploading -->
-                    <div wire:loading wire:target="profile_picture" class="text-xs text-blue-600 mt-1">Uploading picture...</div>
-                    @if ($profile_picture)
-                        <div class="mt-2 flex items-center space-x-2">
-                            <span class="text-[11px] text-slate-500">Preview:</span>
-                            <img src="{{ $profile_picture->temporaryUrl() }}" class="w-10 h-10 object-cover rounded-md border border-slate-200">
-                        </div>
-                    @endif
+                    <!-- Instant Preview -->
+                    <div x-show="photoPreview" class="mt-2 flex items-center space-x-2" style="display: none;">
+                        <span class="text-[11px] text-slate-500">Preview:</span>
+                        <img :src="photoPreview" class="w-10 h-10 object-cover rounded-md border border-slate-200 shadow-xs">
+                    </div>
                 </div>
 
                 <!-- Buttons -->

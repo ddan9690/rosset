@@ -6,6 +6,7 @@ use App\Models\SolidarityFund;
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceContribution;
 use App\Models\MembershipRequest;
+use App\Models\Dependent;
 use App\Services\WelfareRatingService;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -21,14 +22,14 @@ class Portal extends Component
     public $memberName = '';
     public $membershipNumber = '';
     public $memberStatus = '';
-    public $isRegistrationPaid = false;
     public $isProfileComplete = false;
+    public $hasDependents = false; // Replaced isRegistrationPaid
     public $solidarityBalance = 0;
     public $welfareRatingScore = 0;
 
     // Search and Sort properties for Benevolence Cases
     public $search = '';
-    public $sortBy = 'newest'; // Default to newest created first
+    public $sortBy = 'newest';
 
     public function updatingSearch()
     {
@@ -48,18 +49,14 @@ class Portal extends Component
 
         $user = Auth::user();
 
-        // Allow previously onboarded or active members to bypass the membership request check
-        if ($user->status === 'active' || $user->registration_fee_paid) {
-            // Fully onboarded, proceed to portal
+        // Allow active members to bypass the membership request check
+        if ($user->status === 'active') {
+            // Proceed to portal
         } else {
             $membershipReq = MembershipRequest::where('user_id', $user->id)->latest()->first();
 
             if (!$membershipReq || in_array($membershipReq->status, ['pending', 'rejected'])) {
                 return redirect()->route('membership.status');
-            }
-
-            if ($membershipReq->status === 'approved' && !$user->registration_fee_paid) {
-                return redirect()->route('register.fee');
             }
         }
 
@@ -71,13 +68,21 @@ class Portal extends Component
 
         $this->membershipNumber = $user->membership_number ?? $user->tsc_number ?? 'N/A';
         $this->memberStatus = ucfirst($user->status ?? 'Pending');
-        $this->isRegistrationPaid = (bool) ($user->registration_fee_paid ?? false);
 
         $this->isProfileComplete =
             !empty($user->tsc_number) &&
             !empty($user->id_number) &&
             !empty($user->school) &&
             !str_starts_with($user->tsc_number, 'TSC-');
+
+        // Check if user has filled at least one dependent (Spouse, Parent, or Child)
+        $dependantsRecord = Dependent::where('user_id', $user->id)->first();
+        
+        $this->hasDependents = $dependantsRecord && (
+            !empty($dependantsRecord->spouse) || 
+            !empty($dependantsRecord->parents) || 
+            !empty($dependantsRecord->children)
+        );
 
         $wallet = SolidarityFund::firstOrCreate([
             'user_id' => $user->id,
@@ -90,11 +95,6 @@ class Portal extends Component
         $this->welfareRatingScore = $ratingData['score'] ?? 0;
     }
 
-    public function redirectToPayment()
-    {
-        return redirect()->route('register.fee');
-    }
-
     public function render()
     {
         $user = Auth::user();
@@ -103,12 +103,10 @@ class Portal extends Component
         $query = BenevolenceCase::with(['member', 'category'])
             ->whereIn('status', ['active', 'closed']);
 
-        // Only show cases created on or after the member's joined_at timestamp
         if ($user->joined_at) {
             $query->where('created_at', '>=', $user->joined_at);
         }
 
-        // Search filter (Case Number or Member's First/Last Name)
         if (!empty($this->search)) {
             $searchTerm = trim($this->search);
             $query->where(function ($q) use ($searchTerm) {
@@ -122,7 +120,6 @@ class Portal extends Component
             });
         }
 
-        // Sorting configuration
         if ($this->sortBy === 'deadline_soonest') {
             $query->orderByRaw('CASE WHEN deadline IS NULL THEN 1 ELSE 0 END')
                   ->orderBy('deadline', 'asc');
@@ -131,7 +128,6 @@ class Portal extends Component
         } elseif ($this->sortBy === 'oldest') {
             $query->orderBy('created_at', 'asc');
         } else {
-            // Default: newest created first
             $query->orderBy('created_at', 'desc');
         }
 

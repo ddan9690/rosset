@@ -72,34 +72,19 @@ class User extends Authenticatable
     }
 
     /**
-     * Activate the user after a successful registration fee payment, 
-     * assign the next sequential membership number, and set the joined_at timestamp.
+     * Activate the user with a manually assigned membership number by the admin
+     * upon approving the membership request.
      */
-    public function activateAfterPayment(): void
+    public function activateWithMembershipNumber(string $membershipNumber): void
     {
-        // Prevent re-processing if already active or paid
-        if ($this->registration_fee_paid && $this->status === 'active') {
+        // Prevent re-processing if already active with a membership number
+        if ($this->status === 'active' && $this->membership_number) {
             return;
         }
 
-        // Determine membership number only if not already assigned
-        $membershipNumber = $this->membership_number;
-
-        if (!$membershipNumber) {
-            // Find the maximum existing membership number numerically from the database
-            $lastMembershipNumber = self::max(DB::raw('CAST(membership_number AS UNSIGNED)'));
-
-            // If prior members exist, increment the highest number; otherwise start at 1
-            $nextNumber = $lastMembershipNumber ? $lastMembershipNumber + 1 : 1;
-
-            $membershipNumber = (string) $nextNumber;
-        }
-
-        // Determine joining timestamp (keep existing if already set, otherwise use current time)
         $joinedAt = $this->joined_at ?? now();
 
         $this->update([
-            'registration_fee_paid' => true,
             'membership_number' => $membershipNumber,
             'joined_at' => $joinedAt,
             'status' => 'active',

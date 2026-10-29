@@ -35,11 +35,8 @@ class Register extends Component
     public $email = '';
     public $password = '';
     public $password_confirmation = '';
-    public $profile_picture; // Added for file upload
+    public $profile_picture;
 
-    /**
-     * Redirect already authenticated users away from the registration page.
-     */
     public function mount()
     {
         if (Auth::check()) {
@@ -90,7 +87,7 @@ class Register extends Component
             'school' => 'required|string|max:255',
             'email' => 'required|email|unique:users,email',
             'password' => 'required|min:6|confirmed',
-            'profile_picture' => 'nullable|image|max:2048', // Max 2MB image validation
+            'profile_picture' => 'nullable|image|max:2048',
         ], [
             'phone.regex' => 'Please enter a valid phone number format.',
             'phone.unique' => 'Phone number already in use',
@@ -121,7 +118,6 @@ class Register extends Component
                     'password' => Hash::make($this->password),
                 ]);
 
-                // Automatically assign the default 'member' role
                 $user->assignRole('member');
 
                 MembershipRequest::create([
