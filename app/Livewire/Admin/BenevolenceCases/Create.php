@@ -45,21 +45,40 @@ class Create extends Component
         ];
     }
 
-    public function selectMember($id)
+    public function selectMember($id, BenevolenceClaimEligibilityService $eligibilityService)
     {
-        $this->selectedMember = User::find($id);
-        if ($this->selectedMember) {
-            $this->user_id =$this->selectedMember->id;
-            $this->searchMember = '';
+        $member = User::find($id);
+
+        if (!$member) {
+            return;
         }
+
+        // Run constitutional eligibility check immediately upon selection
+        $eligibilityError = $eligibilityService->check($member);
+
+        if ($eligibilityError) {
+            $memberName = trim(($member->first_name ?? '') . ' ' . ($member->last_name ?? ''));
+            session()->flash('error', "Cannot open a benevolence case for {$memberName}. {$eligibilityError}");
+            
+            $this->reset(['searchMember', 'selectedMember', 'user_id']);
+            return;
+        }
+
+        session()->forget('error');
+        $this->selectedMember = $member;
+        $this->user_id = $member->id;
+        $this->searchMember = '';
     }
 
     public function clearSelectedMember()
     {
         $this->selectedMember = null;
         $this->user_id = '';
-        $this->benevolence_category_id = '';$this->case_details = '';
-        $this->deadline = '';$this->auto_settle = true;
+        $this->benevolence_category_id = '';
+        $this->case_details = '';
+        $this->deadline = '';
+        $this->auto_settle = true;
+        session()->forget('error');
     }
 
     public function save(BenevolenceClaimEligibilityService $eligibilityService)
@@ -71,13 +90,13 @@ class Create extends Component
         }
 
         if ($this->selectedMember) {
-            // Reuse the constitutional eligibility service to verify the member
             $eligibilityError = $eligibilityService->check($this->selectedMember);
             
-            if ($eligibilityError) {$memberName = trim(($this->selectedMember->first_name ?? '') . ' ' . ($this->selectedMember->last_name ?? ''));
-                
+            if ($eligibilityError) {
+                $memberName = trim(($this->selectedMember->first_name ?? '') . ' ' . ($this->selectedMember->last_name ?? ''));
                 session()->flash('error', "Cannot open a benevolence case for {$memberName}. {$eligibilityError}");
-                return redirect()->route('admin.benevolence.cases.index');
+                $this->clearSelectedMember();
+                return;
             }
         }
 
@@ -86,7 +105,7 @@ class Create extends Component
         $membershipNo = $this->selectedMember->membership_number ?? $this->selectedMember->id;
 
         // =========================================================================
-        // STEP 1: SIMULATE OPENING CASE PROCESS
+        // STEP 1: OPENING CASE PROCESS
         // =========================================================================
         $this->activeStep = 1;
         $this->progressPercentage = 10;
@@ -97,9 +116,10 @@ class Create extends Component
         $this->progressMessage = "Generating secure case sequence and unique identifiers...";
         usleep(350000);
 
-        $latestCase = BenevolenceCase::latest('id')->first();$globalSequence = $latestCase ? $latestCase->id + 1 : 1;
-        $caseNumber = $membershipNo . '/' .$globalSequence;
-        $slug = Str::slug($memberName . '-' . $membershipNo . '-' .$globalSequence);
+        $latestCase = BenevolenceCase::latest('id')->first();
+        $globalSequence = $latestCase ? $latestCase->id + 1 : 1;
+        $caseNumber = $membershipNo . '/' . $globalSequence;
+        $slug = Str::slug($memberName . '-' . $membershipNo . '-' . $globalSequence);
 
         $this->progressPercentage = 60;
         $this->progressMessage = "Persisting benevolence case record ({$caseNumber})...";
@@ -123,16 +143,20 @@ class Create extends Component
         // =========================================================================
         // STEP 2: SOLIDARITY FUND DEDUCTIONS (IF ENABLED)
         // =========================================================================
-        if ($this->auto_settle) {$this->activeStep = 2;
+        if ($this->auto_settle) {
+            $this->activeStep = 2;
             $this->progressPercentage = 0;
             $this->progressMessage = "Scanning active wallets for eligible member contributions...";
             usleep(300000);
 
             $service = new BenevolenceSettlementService();
             
-            $this->settledCount =$service->settleEligibleMembers($case, function ($current, $total,$msg) {
-                $this->progressMessage =$msg;
-                $this->progressPercentage = 10 + (int)(($current / max($total, 1)) * 85); }); } else {$this->activeStep = 2;
+            $this->settledCount = $service->settleEligibleMembers($case, function ($current, $total, $msg) {
+                $this->progressMessage = $msg;
+                $this->progressPercentage = 10 + (int)(($current / max($total, 1)) * 85);
+            });
+        } else {
+            $this->activeStep = 2;
             $this->progressPercentage = 100;
             $this->progressMessage = "Auto-settlement skipped as requested.";
         }
@@ -141,7 +165,6 @@ class Create extends Component
         $this->progressMessage = "Operations completed successfully.";
         usleep(300000);
 
-        // Flash session data for index view
         session()->flash('solidarity_settled', [
             'enabled' => $this->auto_settle,
             'settled' => $this->settledCount,
@@ -151,7 +174,6 @@ class Create extends Component
             'member_no' => $membershipNo,
         ]);
 
-        // Dispatch browser event to trigger SweetAlert dialog before redirecting
         $this->dispatch('case-opened-success', ['redirectUrl' => route('admin.benevolence.cases.index')]);
     }
 
@@ -159,7 +181,7 @@ class Create extends Component
     {
         $members = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $members = User::where('first_name', 'like', '\%' .$this->searchMember . '%')
+            $members = User::where('first_name', 'like', '%' . $this->searchMember . '%')
                 ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
                 ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
                 ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')

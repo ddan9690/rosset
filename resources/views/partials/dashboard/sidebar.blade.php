@@ -58,6 +58,13 @@
             Benevolence Claims
         </a>
 
+        <!-- Registration Payments Link -->
+        <a href="{{ route('admin.registration.index') }}" wire:navigate
+            class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.registration*') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">
+            <i data-lucide="award" class="w-5 h-5 mr-3 text-[#2EA3F2]"></i>
+            Registration Fees
+        </a>
+
         <!-- AGM Payments Link -->
         <a href="{{ route('admin.agm.index') }}" wire:navigate
             class="flex items-center px-4 py-3 rounded-lg transition {{ request()->routeIs('admin.agm*') ? 'bg-[#2EA3F2]/25 border-l-4 border-[#2EA3F2]' : 'hover:bg-white/5 text-slate-300' }}">

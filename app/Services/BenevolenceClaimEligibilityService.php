@@ -2,66 +2,87 @@
 
 namespace App\Services;
 
-use App\Models\AgmPayment;
 use App\Models\BenevolenceCase;
 use App\Models\BenevolenceContribution;
+use App\Models\RegistrationPayment;
+use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 
 class BenevolenceClaimEligibilityService
 {
     /**
-     * Check whether a member is eligible to submit a benevolence claim.
-     * Returns null if eligible, or a polite, constitutionally-cited error message if ineligible.
+     * Check whether a member is eligible to submit or have a benevolence claim/case opened.
+     * Returns null if eligible, or a clear, concise administrative error message if ineligible.
      */
     public function check(User $user): ?string
     {
-        // 1. Annual Registration Fee Check (Chapter 2, Condition 1)
-        if (!$user->registration_fee_paid) {
-            return 'As per Chapter Two, Condition 1 of the ROSSET-SWA Constitution, your annual registration fee of Ksh 150 must be fully paid before you can submit an assistance claim.';
+        $settings = Setting::current();
+        $memberName = trim(($user->first_name ?? 'Member') . ' ' . ($user->last_name ?? ''));
+        $currentYear = (int) date('Y');
+
+        // =========================================================================
+        // 1. ANNUAL REGISTRATION FEE CHECK (Chapter 2, Condition 1)
+        // =========================================================================
+        $hasPaidRegFee = $user->registration_fee_paid || RegistrationPayment::where('user_id', $user->id)
+            ->where('year', $currentYear)
+            ->where('status', 'success')
+            ->exists();
+
+        if (!$hasPaidRegFee) {
+            $regFeeAmount = number_format($settings->registration_fee ?? 150);
+            return "As per Chapter Two, Condition 1 of the ROSSET-SWA Constitution, {$memberName}'s annual registration fee of Ksh {$regFeeAmount} for the {$currentYear} financial year has not been paid. The fee must be cleared before an assistance claim can be processed.";
         }
 
-        // 2. Profile Completion Check (Chapter 2, Condition 2)
+        // =========================================================================
+        // 2. PROFILE COMPLETION CHECK (Chapter 2, Condition 2)
+        // =========================================================================
         $isProfileComplete = !empty($user->tsc_number) &&
             !empty($user->id_number) &&
             !empty($user->school) &&
             !str_starts_with($user->tsc_number, 'TSC-');
 
         if (!$isProfileComplete) {
-            return 'As per Chapter Two, Condition 2 of the ROSSET-SWA Constitution, please ensure your member profile details (including your TSC number, ID number, and school) are completely updated in your portal.';
+            return "As per Chapter Two, Condition 2 of the ROSSET-SWA Constitution, the member's profile details (including TSC number, ID number, and school) are incomplete.";
         }
 
-        // 3. Active Account Status Check (Chapter 3)
+        // =========================================================================
+        // 3. ACCOUNT STATUS CHECK (Chapter 3)
+        // =========================================================================
         if (isset($user->status) && in_array(strtolower($user->status), ['suspended', 'terminated', 'defaulted', 'pending', 'rejected'])) {
-            return 'As per Chapter Three of the ROSSET-SWA Constitution, your current membership account status (' . ucfirst($user->status) . ') restricts you from submitting assistance claims at this time.';
+            $statusText = ucfirst(strtolower($user->status));
+            return "A benevolence case cannot be created because the account status is currently listed as {$statusText}.";
         }
 
-        // 4. AGM Fee Payment Check for Current Financial Year (Chapter 6 & Chapter 10)
-        $currentYear = (int) date('Y');
-        $hasPaidAgm = AgmPayment::where('user_id', $user->id)
+        // =========================================================================
+        // 4. LATE REGISTRATION WAITING PERIOD CHECK (Chapter 2, Condition 3)
+        // =========================================================================
+        $regPayment = RegistrationPayment::where('user_id', $user->id)
             ->where('year', $currentYear)
-            ->whereIn('status', ['success', 'paid', 'completed', 'approved', 'successful'])
-            ->exists();
+            ->where('status', 'success')
+            ->first();
 
-        if (!$hasPaidAgm) {
-            return "As per Chapter Six and Chapter Ten of the ROSSET-SWA Constitution, members are required to pay the mandatory Ksh 150 AGM contribution fee for the {$currentYear} financial year before accessing welfare benefits.";
-        }
+        $paymentDate = $regPayment ? Carbon::parse($regPayment->paid_at) : ($user->joined_at ? Carbon::parse($user->joined_at) : null);
 
-        // 5. Late Registration Waiting Period Check (Chapter 2, Condition 3)
-        if ($user->joined_at) {
-            $joinedDate = Carbon::parse($user->joined_at);
-            $februaryDeadline = Carbon::create($joinedDate->year, 2, 28, 23, 59, 59);
+        if ($paymentDate) {
+            $deadlineMonth = $settings->registration_deadline_month ?? 2;
+            $deadlineDay = $settings->registration_deadline_day ?? 28;
+            $februaryDeadline = Carbon::create($currentYear, $deadlineMonth, $deadlineDay, 23, 59, 59);
 
-            if ($joinedDate->greaterThan($februaryDeadline)) {
-                $daysSinceJoined = (int) $joinedDate->diffInDays(now());
-                if ($daysSinceJoined < 30) {
-                    $remainingDays = 30 - $daysSinceJoined;
-                    return "As per Chapter Two, Condition 3 of the ROSSET-SWA Constitution, late registrations completed after 28th February are subject to a mandatory 30-day waiting period. You have {$remainingDays} day(s) remaining before becoming eligible.";
+            if ($paymentDate->greaterThan($februaryDeadline)) {
+                $daysSincePayment = (int) $paymentDate->diffInDays(now());
+                $waitingPeriodDays = $settings->late_registration_waiting_period_days ?? 30;
+
+                if ($daysSincePayment < $waitingPeriodDays) {
+                    $remainingDays = $waitingPeriodDays - $daysSincePayment;
+                    return "As per Chapter Two, Condition 3 of the ROSSET-SWA Constitution, late registrations completed after 28th February are subject to a mandatory {$waitingPeriodDays}-day waiting period. The member has {$remainingDays} day(s) remaining before becoming eligible for welfare claims.";
                 }
             }
         }
 
-        // 6. Participation / Contribution Defaulter Check (Chapter 3 & Chapter 5)
+        // =========================================================================
+        // 5. PARTICIPATION / CONTRIBUTION DEFAULTER CHECK (Chapter 3 & Chapter 5)
+        // =========================================================================
         if ($user->joined_at) {
             $contributedCaseIds = BenevolenceContribution::where('user_id', $user->id)
                 ->pluck('benevolence_case_id')
@@ -69,15 +90,15 @@ class BenevolenceClaimEligibilityService
 
             $missedCasesCount = BenevolenceCase::whereIn('status', ['active', 'closed'])
                 ->where('created_at', '>=', $user->joined_at)
-                ->where('user_id', '!=', $user->id) // Exclude own case
+                ->where('user_id', '!=', $user->id) // Exclude member's own case
                 ->whereNotIn('id', $contributedCaseIds)
                 ->count();
 
             if ($missedCasesCount > 0) {
-                return "As per Chapter Three and Chapter Five of the ROSSET-SWA Constitution, our records indicate you have missed contributing to {$missedCasesCount} past benevolence case(s). Defaulting on contributions temporarily disqualifies members from submitting claims until all arrears are fully cleared in solidarity with colleagues.";
+                return "As per Chapter Three and Chapter Five of the ROSSET-SWA Constitution, records indicate the member has missed contributing to {$missedCasesCount} past benevolence case(s). Claims are restricted until all arrears are fully cleared.";
             }
         }
 
-        return null; 
+        return null; // Eligible!
     }
 }

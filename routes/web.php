@@ -17,6 +17,8 @@ use App\Livewire\Admin\BenevolenceClaims as AdminBenevolenceClaims;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ManageMembershipRequests;
 use App\Livewire\Admin\MemberOnboard;
+use App\Livewire\Admin\RegistrationPayments\Index as RegistrationPaymentsIndex;
+use App\Livewire\Admin\RegistrationPayments\Show as RegistrationPaymentsShow;
 use App\Livewire\Admin\Roles;
 use App\Livewire\Admin\Settings;
 use App\Livewire\Admin\SolidarityManagement;
@@ -168,6 +170,15 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
     Route::get('/admin/agm-payments/{id}/{year}', AgmPaymentsShow::class)
         ->middleware('permission:view transactions')
         ->name('admin.agm.show');
+
+    // Annual Registration Fee Payments Management Routes
+    Route::get('/admin/registration-payments', RegistrationPaymentsIndex::class)
+        ->middleware('permission:view transactions')
+        ->name('admin.registration.index');
+
+    Route::get('/admin/registration-payments/{id}/{year}', RegistrationPaymentsShow::class)
+        ->middleware('permission:view transactions')
+        ->name('admin.registration.show');
 
     // Gateway Transactions Route
     Route::get('/admin/transactions', Transactions::class)

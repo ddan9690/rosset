@@ -3,6 +3,8 @@
 namespace App\Livewire\Admin;
 
 use App\Models\MembershipRequest;
+use App\Models\RegistrationPayment;
+use App\Models\Setting;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -70,7 +72,7 @@ class ManageMembershipRequests extends Component
     }
 
     /**
-     * Process approval, check for existing membership numbers, and trigger SweetAlert if conflict found.
+     * Process approval, assign membership number, mark registration paid, and insert RegistrationPayment record.
      */
     public function processApproval(bool $force = false)
     {
@@ -99,18 +101,45 @@ class ManageMembershipRequests extends Component
         }
 
         DB::transaction(function () use ($request) {
+            $currentYear = (int) date('Y');
+            $settings = Setting::first();
+            $regFee = $settings?->registration_fee ?? 150.00;
+
+            // 1. Mark request as approved
             $request->update([
                 'status' => 'approved',
                 'approved_by' => auth()->id(),
+                'registration_fee_paid' => true,
             ]);
 
+            // 2. Activate user account and set membership details
             if ($request->user) {
+                $request->user->update([
+                    'registration_fee_paid' => true,
+                ]);
+
                 $request->user->activateWithMembershipNumber($this->membership_number);
+
+                // 3. Automatically record the Registration Payment entry for the current year
+                RegistrationPayment::updateOrCreate(
+                    [
+                        'user_id' => $request->user->id,
+                        'year'    => $currentYear,
+                    ],
+                    [
+                        'amount'          => $regFee,
+                        'paid_at'         => now(),
+                        'recorded_by'     => auth()->id(),
+                        'payment_channel' => 'Registration Approval',
+                        'status'          => 'success',
+                        'notes'           => 'Auto-recorded upon membership request approval.',
+                    ]
+                );
             }
         });
 
         $this->closeApproveModal();
-        session()->flash('message', 'Membership request approved and membership number assigned successfully.');
+        session()->flash('message', 'Membership request approved, registration fee recorded, and membership number assigned successfully.');
     }
 
     public function rejectRequest($id)

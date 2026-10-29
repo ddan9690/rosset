@@ -53,6 +53,17 @@
         <a href="{{ route('admin.benevolence.cases.index') }}" wire:navigate class="text-xs font-bold text-slate-600 hover:underline">&larr; Back to List</a>
     </div>
 
+    <!-- Flash Error Notice -->
+    @if (session()->has('error'))
+        <div class="bg-amber-50 border border-amber-300 text-amber-900 text-xs px-5 py-4 rounded-xl font-medium flex items-start space-x-3 shadow-sm">
+            <i data-lucide="info" class="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5"></i>
+            <div class="space-y-1">
+                <strong class="font-bold uppercase tracking-wider text-[11px] block text-amber-900">Constitutional Eligibility Notice</strong>
+                <p class="leading-relaxed">{{ session('error') }}</p>
+            </div>
+        </div>
+    @endif
+
     <div class="bg-white rounded-xl shadow-xs border border-slate-200 p-6 space-y-6">
         
         <!-- ================= MEMBER SEARCH SECTION ================= -->
@@ -160,7 +171,6 @@
 
 @script
 <script>
-    // Listen for completion event dispatched from Livewire component
     $wire.on('case-opened-success', (event) => {
         const data = event[0] || event;
         Swal.fire({
