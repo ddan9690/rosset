@@ -13,7 +13,7 @@ class Login extends Component
 {
     public $title = 'Member Login | ROSSET-SWA';
 
-    public $login = '';
+    public $tsc_number = '';
     public $password = '';
     public $errorMessage = null;
 
@@ -28,7 +28,7 @@ class Login extends Component
     }
 
     protected $rules = [
-        'login' => 'required',
+        'tsc_number' => 'required',
         'password' => 'required',
     ];
 
@@ -37,11 +37,8 @@ class Login extends Component
         $this->reset('errorMessage');
         $this->validate();
 
-        // Find user by phone, email, or tsc_number
-        $user = User::where('phone', $this->login)
-            ->orWhere('email', $this->login)
-            ->orWhere('tsc_number', $this->login)
-            ->first();
+        // Find user strictly by TSC number
+        $user = User::where('tsc_number', $this->tsc_number)->first();
 
         if ($user && Hash::check($this->password, $user->password)) {
             Auth::login($user);
@@ -53,7 +50,7 @@ class Login extends Component
             return redirect()->intended(route('portal'));
         }
 
-        $this->errorMessage = 'Invalid phone number or password.';
+        $this->errorMessage = 'Invalid TSC Number or password.';
     }
 
     public function render()
