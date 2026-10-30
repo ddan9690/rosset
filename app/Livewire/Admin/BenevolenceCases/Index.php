@@ -35,10 +35,17 @@ class Index extends Component
             ->when($this->search, function ($query) {
                 $query->where('case_number', 'like', '%' . $this->search . '%')
                     ->orWhereHas('member', function ($q) {
-                        $q->where('first_name', 'like', '%' . $this->search . '%')
-                          ->orWhere('last_name', 'like', '%' . $this->search . '%')
-                          ->orWhere('tsc_number', 'like', '%' . $this->search . '%');
+                        $q->excludeDevelopers() // Excludes technical builder accounts from reporting searches
+                          ->where(function ($sub) {
+                              $sub->where('first_name', 'like', '%' . $this->search . '%')
+                                  ->orWhere('last_name', 'like', '%' . $this->search . '%')
+                                  ->orWhere('tsc_number', 'like', '%' . $this->search . '%');
+                          });
                     });
+            })
+            
+            ->whereHas('member', function ($q) {
+                $q->excludeDevelopers();
             })
             ->latest()
             ->paginate(10);

@@ -9,7 +9,7 @@
                     <span>&larr; Back to Home</span>
                 </a>
 
-                @hasanyrole(['super admin', 'welfare admin'])
+                @hasanyrole(['super-admin', 'welfare-admin'])
                     <span class="text-slate-300">|</span>
 
                     <a href="{{ route('admin.dashboard') }}" wire:navigate

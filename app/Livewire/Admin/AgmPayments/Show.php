@@ -64,7 +64,7 @@ class Show extends Component
 
     public function selectMember($memberId)
     {
-        $this->selectedMember = User::find($memberId);
+        $this->selectedMember = User::excludeDevelopers()->find($memberId);
         if ($this->selectedMember) {
             $this->user_id = $this->selectedMember->id;
             $this->searchMember = '';
@@ -90,7 +90,7 @@ class Show extends Component
             'user_id.required' => 'Please search and select a valid member.',
         ]);
 
-        $user = User::findOrFail($this->user_id);
+        $user = User::excludeDevelopers()->findOrFail($this->user_id);
         $admin = Auth::user();
         $ref = !empty($this->referenceNumber) ? strtoupper(trim($this->referenceNumber)) : ('AGM-' . $this->agmYear . '-' . strtoupper(substr(md5(uniqid()), 0, 6)));
 
@@ -134,7 +134,10 @@ class Show extends Component
 
     public function deletePayment($paymentId)
     {
-        $payment = AgmPayment::findOrFail($paymentId);
+        $payment = AgmPayment::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })->findOrFail($paymentId);
+
         if ($payment->transaction_id) {
             Transaction::where('id', $payment->transaction_id)->delete();
         }
@@ -147,48 +150,66 @@ class Show extends Component
     {
         $searchedMembers = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $searchedMembers = User::where('first_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')
+            $searchedMembers = User::excludeDevelopers()
+                ->where(function ($q) {
+                    $q->where('first_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%');
+                })
                 ->limit(5)
                 ->get();
         }
 
-        $paymentsQuery = AgmPayment::with('user')
+        $paymentsQuery = AgmPayment::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->where('year', (int)$this->year)
             ->where('status', 'success');
 
         if (!empty($this->search)) {
             $term = trim($this->search);
             $paymentsQuery->whereHas('user', function ($q) use ($term) {
-                $q->where('membership_number', 'like', "%{$term}%")
-                  ->orWhere('tsc_number', 'like', "%{$term}%")
-                  ->orWhere('first_name', 'like', "%{$term}%")
-                  ->orWhere('last_name', 'like', "%{$term}%");
+                $q->excludeDevelopers()
+                  ->where(function ($sub) use ($term) {
+                      $sub->where('membership_number', 'like', "%{$term}%")
+                          ->orWhere('tsc_number', 'like', "%{$term}%")
+                          ->orWhere('first_name', 'like', "%{$term}%")
+                          ->orWhere('last_name', 'like', "%{$term}%");
+                  });
             });
         }
 
         $payments = $paymentsQuery->latest('paid_at')->paginate(15);
 
-        // Core Financial & Demographic Statistics
-        $totalCollections = AgmPayment::where('year', (int)$this->year)->where('status', 'success')->sum('amount');
-        $totalMembersPaid = AgmPayment::where('year', (int)$this->year)->where('status', 'success')->count();
+        // Core Financial & Demographic Statistics (excluding developer records)
+        $totalCollections = AgmPayment::whereHas('user', fn($q) => $q->excludeDevelopers())
+            ->where('year', (int)$this->year)
+            ->where('status', 'success')
+            ->sum('amount');
+
+        $totalMembersPaid = AgmPayment::whereHas('user', fn($q) => $q->excludeDevelopers())
+            ->where('year', (int)$this->year)
+            ->where('status', 'success')
+            ->count();
 
         $maleCount = AgmPayment::where('year', (int)$this->year)
             ->where('status', 'success')
-            ->whereHas('user', fn($q) => $q->whereRaw('LOWER(gender) = ?', ['male']))
+            ->whereHas('user', fn($q) => $q->excludeDevelopers()->whereRaw('LOWER(gender) = ?', ['male']))
             ->count();
 
         $femaleCount = AgmPayment::where('year', (int)$this->year)
             ->where('status', 'success')
-            ->whereHas('user', fn($q) => $q->whereRaw('LOWER(gender) = ?', ['female']))
+            ->whereHas('user', fn($q) => $q->excludeDevelopers()->whereRaw('LOWER(gender) = ?', ['female']))
             ->count();
 
         $levelBreakdown = [
-            'Primary' => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->whereRaw('LOWER(school_level) = ?', ['primary']))->count(),
-            'Junior'  => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->whereRaw('LOWER(school_level) = ?', ['junior']))->count(),
-            'Senior'  => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->whereRaw('LOWER(school_level) = ?', ['senior']))->count(),
+            'Primary' => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->excludeDevelopers()->whereRaw('LOWER(school_level) = ?', ['primary']))->count(),
+            'Junior'  => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->excludeDevelopers()->whereRaw('LOWER(school_level) = ?', ['junior']))->count(),
+            'Senior'  => AgmPayment::where('year', (int)$this->year)->where('status', 'success')->whereHas('user', fn($q) => $q->excludeDevelopers()->whereRaw('LOWER(school_level) = ?', ['senior']))->count(),
         ];
 
         return view('livewire.admin.agm-payments.show', [

@@ -54,7 +54,7 @@ class SolidarityManagement extends Component
 
     public function selectMember($id)
     {
-        $this->selectedMember = User::find($id);
+        $this->selectedMember = User::excludeDevelopers()->find($id);
         if ($this->selectedMember) {
             $this->user_id = $this->selectedMember->id;
             $this->searchMember = '';
@@ -78,9 +78,12 @@ class SolidarityManagement extends Component
             'amount.required' => 'Please enter a valid amount.',
         ]);
 
+        // Ensure target user is not a developer account
+        $member = User::excludeDevelopers()->findOrFail($this->user_id);
+
         $amount = (float) $this->amount;
 
-        $wallet = SolidarityFund::firstOrNew(['user_id' => $this->user_id]);
+        $wallet = SolidarityFund::firstOrNew(['user_id' => $member->id]);
         
         if (!$wallet->exists) {
             $wallet->balance = 0;
@@ -108,26 +111,34 @@ class SolidarityManagement extends Component
     {
         $searchedMembers = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $searchedMembers = User::where('first_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')
+            $searchedMembers = User::excludeDevelopers()
+                ->where(function ($q) {
+                    $q->where('first_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%');
+                })
                 ->limit(5)
                 ->get();
         }
 
-        // Query strictly filtering for balances greater than 0
-        $query = SolidarityFund::with('user')
+        // Query strictly filtering for balances greater than 0 and excluding developers
+        $query = SolidarityFund::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->join('users', 'solidarity_funds.user_id', '=', 'users.id')
             ->where('solidarity_funds.balance', '>', 0)
             ->select('solidarity_funds.*');
 
         if (strlen(trim($this->search)) > 0) {
             $searchTerm = '%' . $this->search . '%';
-            $query->where(function($q) use ($searchTerm) {
+            $query->where(function ($q) use ($searchTerm) {
                 $q->where('users.membership_number', 'like', $searchTerm)
-                  ->orWhere('users.first_name', 'like', $searchTerm)
-                  ->orWhere('users.last_name', 'like', $searchTerm);
+                    ->orWhere('users.first_name', 'like', $searchTerm)
+                    ->orWhere('users.last_name', 'like', $searchTerm);
             });
         }
 
@@ -139,10 +150,15 @@ class SolidarityManagement extends Component
 
         $solidarityAccounts = $query->paginate(10);
 
+        // Calculate total solidarity balance strictly for non-developer members
+        $totalSolidarityBalance = SolidarityFund::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })->sum('balance');
+
         return view('livewire.admin.solidarity-management', [
             'solidarityAccounts' => $solidarityAccounts,
             'searchedMembers' => $searchedMembers,
-            'totalSolidarityBalance' => SolidarityFund::sum('balance'),
+            'totalSolidarityBalance' => $totalSolidarityBalance,
         ]);
     }
 }

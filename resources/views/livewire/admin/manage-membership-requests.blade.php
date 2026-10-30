@@ -3,7 +3,7 @@
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
             <h1 class="text-xl font-bold text-slate-800 tracking-tight">Membership Requests</h1>
-            <p class="text-xs text-slate-500 mt-0.5">Review and manage teacher membership applications and assign membership numbers.</p>
+            <p class="text-xs text-slate-500 mt-0.5">Review teacher membership applications, assign membership numbers, and activate accounts.</p>
         </div>
         
         <!-- Search Bar -->
@@ -32,7 +32,7 @@
                 <thead class="bg-slate-50 text-slate-600 uppercase font-semibold tracking-wider border-b border-slate-200 text-[10px]">
                     <tr>
                         <th class="py-3 px-3">#</th>
-                        <th class="py-3 px-3">Date</th>
+                        <th class="py-3 px-3">Requested Date</th>
                         <th class="py-3 px-3">Applicant</th>
                         <th class="py-3 px-3 text-center">Profile Picture</th>
                         <th class="py-3 px-3">Phone</th>
@@ -72,25 +72,25 @@
                                 @if($req->status === 'pending')
                                     <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">Pending</span>
                                 @elseif($req->status === 'approved')
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>
-                                @else
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700 border border-red-200">Rejected</span>
+                                    <div class="flex flex-col">
+                                        <span class="inline-flex items-center w-fit px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">Approved</span>
+                                        <span class="text-[10px] text-slate-400 font-mono mt-0.5">{{ $req->updated_at->setTimezone('Africa/Nairobi')->format('d-M-y') }}</span>
+                                    </div>
                                 @endif
                             </td>
                             <td class="py-3 px-3 text-right space-x-1.5">
-                                @if($req->status !== 'approved')
+                                @if($req->status === 'pending')
                                     <button wire:click="openApproveModal({{ $req->id }})" class="px-2.5 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold rounded text-[11px] transition cursor-pointer">Approve</button>
-                                @endif
-
-                                @if($req->status !== 'rejected')
                                     <button wire:click="rejectRequest({{ $req->id }})" class="px-2.5 py-1 bg-red-50 hover:bg-red-100 text-red-700 font-bold rounded text-[11px] transition cursor-pointer">Reject</button>
+                                @else
+                                    <span class="text-[11px] text-slate-400 font-medium italic">Processed</span>
                                 @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
                             <td colspan="11" class="py-8 text-center text-slate-400">
-                                No membership requests found.
+                                No active membership requests found.
                             </td>
                         </tr>
                     @endforelse

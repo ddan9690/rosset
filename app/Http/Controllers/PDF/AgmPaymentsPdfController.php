@@ -15,8 +15,13 @@ class AgmPaymentsPdfController extends Controller
             return redirect()->route('login');
         }
 
-        // Fetch all successful AGM payments for the requested year
-        $payments = AgmPayment::with('user')
+        // Fetch all successful AGM payments for the requested year, excluding developers
+        $payments = AgmPayment::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->where('year', $year)
             ->where('status', 'success')
             ->latest('paid_at')

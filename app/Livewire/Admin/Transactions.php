@@ -52,8 +52,12 @@ class Transactions extends Component
 
     public function render()
     {
-        $query = Transaction::query()
-            ->with('user')
+        $query = Transaction::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->when($this->search, function ($q) {
                 $search = trim($this->search);
 
@@ -61,9 +65,12 @@ class Transactions extends Component
                     $query->where('reference_number', 'like', '%' . $search . '%')
                         ->orWhere('phone_number', 'like', '%' . $search . '%')
                         ->orWhereHas('user', function ($userQuery) use ($search) {
-                            $userQuery->where('membership_number', 'like', '%' . $search . '%')
-                                ->orWhere('first_name', 'like', '%' . $search . '%')
-                                ->orWhere('last_name', 'like', '%' . $search . '%');
+                            $userQuery->excludeDevelopers()
+                                ->where(function ($sub) use ($search) {
+                                    $sub->where('membership_number', 'like', '%' . $search . '%')
+                                        ->orWhere('first_name', 'like', '%' . $search . '%')
+                                        ->orWhere('last_name', 'like', '%' . $search . '%');
+                                });
                         });
                 });
             })
@@ -74,8 +81,7 @@ class Transactions extends Component
                 $q->whereDate('created_at', '<=', $this->endDate);
             });
 
-        // Total successful transaction amount
-        // Uses the same search/date filters currently applied.
+        // Total successful transaction amount (excluding developer transactions)
         $totalTransactedAmount = (clone $query)
             ->where('status', 'success')
             ->sum('amount');

@@ -31,7 +31,14 @@ class BenevolenceClaims extends Component
 
     public function viewClaim($id)
     {
-        $this->selectedClaim = BenevolenceClaim::with('user')->findOrFail($id);
+        $this->selectedClaim = BenevolenceClaim::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })
+        ->with(['user' => function ($q) {
+            $q->excludeDevelopers();
+        }])
+        ->findOrFail($id);
+
         $this->showViewModal = true;
     }
 
@@ -47,7 +54,10 @@ class BenevolenceClaims extends Component
             return;
         }
 
-        $claim = BenevolenceClaim::findOrFail($id);
+        $claim = BenevolenceClaim::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })->findOrFail($id);
+
         $claim->update(['status' => $status]);
 
         if ($this->selectedClaim && $this->selectedClaim->id === $id) {
@@ -59,17 +69,26 @@ class BenevolenceClaims extends Component
 
     public function render()
     {
-        $query = BenevolenceClaim::with('user')->latest('created_at');
+        $query = BenevolenceClaim::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })
+        ->with(['user' => function ($q) {
+            $q->excludeDevelopers();
+        }])
+        ->latest('created_at');
 
         if (!empty($this->search)) {
             $searchTerm = trim($this->search);
             $query->where(function ($q) use ($searchTerm) {
                 $q->where('description', 'like', "%{$searchTerm}%")
                     ->orWhereHas('user', function ($userQuery) use ($searchTerm) {
-                        $userQuery->where('first_name', 'like', "%{$searchTerm}%")
-                            ->orWhere('last_name', 'like', "%{$searchTerm}%")
-                            ->orWhere('membership_number', 'like', "%{$searchTerm}%")
-                            ->orWhere('tsc_number', 'like', "%{$searchTerm}%");
+                        $userQuery->excludeDevelopers()
+                            ->where(function ($subQuery) use ($searchTerm) {
+                                $subQuery->where('first_name', 'like', "%{$searchTerm}%")
+                                    ->orWhere('last_name', 'like', "%{$searchTerm}%")
+                                    ->orWhere('membership_number', 'like', "%{$searchTerm}%")
+                                    ->orWhere('tsc_number', 'like', "%{$searchTerm}%");
+                            });
                     });
             });
         }

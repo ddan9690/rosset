@@ -47,7 +47,7 @@ class Create extends Component
 
     public function selectMember($id, BenevolenceClaimEligibilityService $eligibilityService)
     {
-        $member = User::find($id);
+        $member = User::excludeDevelopers()->find($id);
 
         if (!$member) {
             return;
@@ -86,7 +86,7 @@ class Create extends Component
         $this->validate();
 
         if (!$this->selectedMember) {
-            $this->selectedMember = User::find($this->user_id);
+            $this->selectedMember = User::excludeDevelopers()->find($this->user_id);
         }
 
         if ($this->selectedMember) {
@@ -168,7 +168,10 @@ class Create extends Component
         session()->flash('solidarity_settled', [
             'enabled' => $this->auto_settle,
             'settled' => $this->settledCount,
-            'attempted' => User::where('status', 'active')->where('id', '!=', $this->user_id)->count(),
+            'attempted' => User::excludeDevelopers()
+                ->where('status', 'active')
+                ->where('id', '!=', $this->user_id)
+                ->count(),
             'case_number' => $case->case_number,
             'member_name' => $memberName,
             'member_no' => $membershipNo,
@@ -181,10 +184,13 @@ class Create extends Component
     {
         $members = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $members = User::where('first_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')
+            $members = User::excludeDevelopers()
+                ->where(function ($query) {
+                    $query->where('first_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%');
+                })
                 ->limit(5)
                 ->get();
         }

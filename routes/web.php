@@ -17,6 +17,10 @@ use App\Livewire\Admin\BenevolenceClaims as AdminBenevolenceClaims;
 use App\Livewire\Admin\Dashboard;
 use App\Livewire\Admin\ManageMembershipRequests;
 use App\Livewire\Admin\MemberOnboard;
+use App\Livewire\Admin\Members\Create as MemberCreate;
+use App\Livewire\Admin\Members\Edit as MemberEdit;
+use App\Livewire\Admin\Members\Index as MemberIndex;
+use App\Livewire\Admin\Members\Show as MemberShow;
 use App\Livewire\Admin\RegistrationPayments\Index as RegistrationPaymentsIndex;
 use App\Livewire\Admin\RegistrationPayments\Show as RegistrationPaymentsShow;
 use App\Livewire\Admin\Roles;
@@ -41,6 +45,11 @@ use App\Livewire\SolidarityFund;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
 Route::get('/', Home::class)->name('home');
 Route::get('/constitution', Constitution::class)->name('constitution');
 Route::get('/updates', Updates::class)->name('updates');
@@ -64,10 +73,16 @@ Route::post('/kcb/ipn', [KcbWebhookController::class, 'handle'])
     ])
     ->name('kcb.ipn');
 
-// Authenticated Routes with Activity Tracking Middleware
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes (Member Portal & Admin)
+|--------------------------------------------------------------------------
+*/
 Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
 
-    // Member Portal & Self-Service Routes
+    // ==========================================
+    // MEMBER PORTAL & SELF-SERVICE ROUTES
+    // ==========================================
     Route::get('/membership/status', MembershipStatus::class)
         ->middleware('permission:view membership status')
         ->name('membership.status');
@@ -107,7 +122,9 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
             ->name('mycontribtiondowlaod');
     });
 
-    // Admin Routes
+    // ==========================================
+    // ADMIN PORTAL ROUTES
+    // ==========================================
     Route::get('/dashboard', Dashboard::class)
         ->middleware('permission:view dashboard')
         ->name('admin.dashboard');
@@ -116,53 +133,61 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:view solidarity fund')
         ->name('admin.solidarity');
 
-    Route::get('/admin/benevolence/categories', BenevolenceCategories::class)
-        ->middleware('permission:manage benevolence categories')
-        ->name('admin.benevolence.categories');
-
-    Route::get('/admin/benevolence/claims', AdminBenevolenceClaims::class)
-        ->middleware('permission:view benevolence cases')
-        ->name('admin.benevolence.claims');
-
     Route::get('/admin/membership-requests', ManageMembershipRequests::class)
         ->middleware('permission:manage membership requests')
         ->name('admin.membership-requests');
 
-    // Members Management Routes (Fully Qualified Classes)
-    Route::get('/admin/members', \App\Livewire\Admin\Members\Index::class)
-        ->middleware('permission:view members')
-        ->name('admin.members');
+    // Members Management Group
+    Route::prefix('admin/members')->group(function () {
+        Route::get('/', MemberIndex::class)
+            ->middleware('permission:view members')
+            ->name('admin.members');
 
-    Route::get('/admin/members/create', \App\Livewire\Admin\Members\Create::class)
-        ->middleware('permission:create members')
-        ->name('admin.members.create');
+        Route::get('/create', MemberCreate::class)
+            ->middleware('permission:create members')
+            ->name('admin.members.create');
 
-    Route::get('/admin/members/{id}', \App\Livewire\Admin\Members\Show::class)
-        ->middleware('permission:show members')
-        ->name('admin.members.show');
+        Route::get('/onboard', MemberOnboard::class)
+            ->middleware('permission:onboard members')
+            ->name('admin.members.onboard');
 
-    Route::get('/admin/members/{id}/edit', \App\Livewire\Admin\Members\Edit::class)
-        ->middleware('permission:edit members')
-        ->name('admin.members.edit');
+        Route::get('/{id}', MemberShow::class)
+            ->middleware('permission:show members')
+            ->name('admin.members.show');
 
-    // Benevolence Cases Management Routes
-    Route::get('/admin/benevolence/cases', BenevolenceCaseIndex::class)
-        ->middleware('permission:view benevolence cases')
-        ->name('admin.benevolence.cases.index');
+        Route::get('/{id}/edit', MemberEdit::class)
+            ->middleware('permission:edit members')
+            ->name('admin.members.edit');
+    });
 
-    Route::get('/admin/benevolence/cases/create', BenevolenceCaseCreate::class)
-        ->middleware('permission:create benevolence cases')
-        ->name('admin.benevolence.cases.create');
+    // Benevolence Management Group
+    Route::prefix('admin/benevolence')->group(function () {
+        Route::get('/categories', BenevolenceCategories::class)
+            ->middleware('permission:manage benevolence categories')
+            ->name('admin.benevolence.categories');
 
-    Route::get('/admin/benevolence/cases/{id}/{slug}/edit', BenevolenceCaseEdit::class)
-        ->middleware('permission:edit benevolence cases')
-        ->name('admin.benevolence.cases.edit');
+        Route::get('/claims', AdminBenevolenceClaims::class)
+            ->middleware('permission:view benevolence cases')
+            ->name('admin.benevolence.claims');
 
-    Route::get('/admin/benevolence/cases/{id}/{slug}', BenevolenceCaseShow::class)
-        ->middleware('permission:show benevolence cases')
-        ->name('admin.benevolence.cases.show');
+        Route::get('/cases', BenevolenceCaseIndex::class)
+            ->middleware('permission:view benevolence cases')
+            ->name('admin.benevolence.cases.index');
 
-    // Annual AGM Payments Management Routes
+        Route::get('/cases/create', BenevolenceCaseCreate::class)
+            ->middleware('permission:create benevolence cases')
+            ->name('admin.benevolence.cases.create');
+
+        Route::get('/cases/{id}/{slug}/edit', BenevolenceCaseEdit::class)
+            ->middleware('permission:edit benevolence cases')
+            ->name('admin.benevolence.cases.edit');
+
+        Route::get('/cases/{id}/{slug}', BenevolenceCaseShow::class)
+            ->middleware('permission:show benevolence cases')
+            ->name('admin.benevolence.cases.show');
+    });
+
+    // Financial Payments & Transactions Group
     Route::get('/admin/agm-payments', AgmPaymentsIndex::class)
         ->middleware('permission:view transactions')
         ->name('admin.agm.index');
@@ -171,7 +196,6 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:view transactions')
         ->name('admin.agm.show');
 
-    // Annual Registration Fee Payments Management Routes
     Route::get('/admin/registration-payments', RegistrationPaymentsIndex::class)
         ->middleware('permission:view transactions')
         ->name('admin.registration.index');
@@ -180,7 +204,6 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
         ->middleware('permission:view transactions')
         ->name('admin.registration.show');
 
-    // Gateway Transactions Route
     Route::get('/admin/transactions', Transactions::class)
         ->middleware('permission:view transactions')
         ->name('admin.transactions');
@@ -200,16 +223,13 @@ Route::middleware(['auth', UpdateUserLastActive::class])->group(function () {
             ->name('agm-payments');
     });
 
-    // System Roles & Settings Routes (Restricted primarily to Super Admin)
+    // System Roles & Settings (Super Admin / Privileged)
     Route::get('/admin/roles', Roles::class)
         ->middleware('role:super admin')
         ->name('admin.roles');
 
-    Route::get('/admin/members/onboard', MemberOnboard::class)
-        ->middleware('permission:onboard members')
-        ->name('admin.members.onboard');
-
     Route::get('/admin/settings', Settings::class)
         ->middleware('permission:manage settings')
         ->name('admin.settings');
+
 });

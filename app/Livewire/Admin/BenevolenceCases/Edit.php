@@ -64,7 +64,7 @@ class Edit extends Component
     public function render()
     {
         return view('livewire.admin.benevolence-cases.edit', [
-            'members' => User::orderBy('first_name')->get(),
+            'members' => User::excludeDevelopers()->orderBy('first_name')->get(),
             'categories' => BenevolenceCategory::all(),
         ]);
     }

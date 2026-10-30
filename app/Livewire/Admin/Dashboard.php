@@ -18,47 +18,71 @@ class Dashboard extends Component
 {
     public function render()
     {
-        // Member Statistics & Breakdowns
-        $totalMembers = User::count();
-        $maleMembers = User::where('gender', 'male')->count();
-        $femaleMembers = User::where('gender', 'female')->count();
-        $juniorSchoolMembers = User::where('school_level', 'Junior School')->count();
-        $seniorSchoolMembers = User::where('school_level', 'Senior School')->count();
+        // Member Statistics & Breakdowns (excluding developers)
+        $totalMembers = User::excludeDevelopers()->count();
+        $maleMembers = User::excludeDevelopers()->where('gender', 'male')->count();
+        $femaleMembers = User::excludeDevelopers()->where('gender', 'female')->count();
+        $juniorSchoolMembers = User::excludeDevelopers()->where('school_level', 'Junior School')->count();
+        $seniorSchoolMembers = User::excludeDevelopers()->where('school_level', 'Senior School')->count();
 
-        // Status-based Member Counts & Pending Membership Requests
-        $pendingRequestsCount = MembershipRequest::where('status', 'pending')->count();
-        $defaultersCount = User::where('status', 'defaulted')->count();
-        $suspendedCount = User::where('status', 'suspended')->count();
-        $deregisteredCount = User::where('status', 'deregistered')->count();
+        // Status-based Member Counts & Pending Membership Requests (excluding developer requests/users)
+        $pendingRequestsCount = MembershipRequest::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })->where('status', 'pending')->count();
+
+        $defaultersCount = User::excludeDevelopers()->where('status', 'defaulted')->count();
+        $suspendedCount = User::excludeDevelopers()->where('status', 'suspended')->count();
+        $deregisteredCount = User::excludeDevelopers()->where('status', 'deregistered')->count();
 
         // Benevolence & Financial Summaries
-        $benevolenceCasesCount = BenevolenceCase::count();
-        $totalSolidarityBalance = SolidarityFund::sum('balance');
+        $benevolenceCasesCount = BenevolenceCase::whereHas('member', function ($q) {
+            $q->excludeDevelopers();
+        })->count();
+
+        // Total solidarity fund balance strictly for non-developer members
+        $totalSolidarityBalance = SolidarityFund::whereHas('user', function ($q) {
+            $q->excludeDevelopers();
+        })->sum('balance');
 
         // Total active registered members for contribution progress ratio denominator
-        $totalActiveMembers = User::where('status', 'active')->count();
+        $totalActiveMembers = User::excludeDevelopers()->where('status', 'active')->count();
 
-        // Benevolence Cases with total collected & contributor counts
-        $benevolenceCases = BenevolenceCase::with(['member', 'category'])
+        // Benevolence Cases with total collected & contributor counts (excluding developers from cases & contributors)
+        $benevolenceCases = BenevolenceCase::whereHas('member', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['member' => function ($q) {
+                $q->excludeDevelopers();
+            }, 'category'])
             ->withCount([
                 'transactions as contributors_count' => function ($query) {
                     $query->where('type', 'benevolence_contribution')
-                        ->where('status', 'success');
+                        ->where('status', 'success')
+                        ->whereHas('user', function ($q) {
+                            $q->excludeDevelopers();
+                        });
                 }
             ])
             ->withSum([
                 'transactions as total_collected' => function ($query) {
                     $query->where('type', 'benevolence_contribution')
-                        ->where('status', 'success');
+                        ->where('status', 'success')
+                        ->whereHas('user', function ($q) {
+                            $q->excludeDevelopers();
+                        });
                 }
             ], 'amount')
             ->latest()
             ->take(5)
             ->get();
 
-        // Recent Gateway Transactions
-        // Latest 20 transactions with the member who made/is associated with the payment
-        $recentTransactions = Transaction::with('user')
+        // Recent Gateway Transactions (excluding developer transactions)
+        $recentTransactions = Transaction::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->latest('created_at')
             ->take(20)
             ->get()
@@ -68,8 +92,13 @@ class Dashboard extends Component
                 }
             });
 
-        // Recent Transaction Ledgers
-        $recentLedgers = TransactionLedger::with('user')
+        // Recent Transaction Ledgers (excluding developer ledgers)
+        $recentLedgers = TransactionLedger::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->latest()
             ->take(10)
             ->get();

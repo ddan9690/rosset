@@ -66,7 +66,7 @@ class Show extends Component
 
     public function selectMember($id)
     {
-        $member = User::find($id);
+        $member = User::excludeDevelopers()->find($id);
         
         if (!$member) {
             return;
@@ -113,7 +113,7 @@ class Show extends Component
             'user_id.required' => 'Please search and select a valid member.',
         ]);
 
-        $user = User::findOrFail($this->user_id);
+        $user = User::excludeDevelopers()->findOrFail($this->user_id);
 
         // Safeguard duplicate check
         $alreadyContributed = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
@@ -158,7 +158,7 @@ class Show extends Component
             return;
         }
 
-        $user = User::findOrFail($this->user_id);
+        $user = User::excludeDevelopers()->findOrFail($this->user_id);
         $expectedAmount = (float) ($this->case->category->amount ?? 0);
         $inputAmount = (float) $this->amount;
         $excessAmount = max(0, $inputAmount - $expectedAmount);
@@ -279,7 +279,7 @@ class Show extends Component
 
                 foreach ($contributions as $contribution) {
                     $userWallet = SolidarityFund::where('user_id', $contribution->user_id)->lockForUpdate()->first();
-                    $user = User::find($contribution->user_id);
+                    $user = User::excludeDevelopers()->find($contribution->user_id);
 
                     if ($userWallet && $user) {
                         $userWallet->increment('balance', $contribution->amount);
@@ -352,15 +352,21 @@ class Show extends Component
     {
         $searchedMembers = collect();
         if (strlen(trim($this->searchMember)) > 0) {
-            $searchedMembers = User::where('first_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
-                ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%')
+            $searchedMembers = User::excludeDevelopers()
+                ->where(function ($query) {
+                    $query->where('first_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%');
+                })
                 ->limit(5)
                 ->get();
         }
 
         $contributions = BenevolenceContribution::where('benevolence_case_id', $this->case->id)
+            ->whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
             ->with('user')
             ->latest('created_at')
             ->get();
@@ -368,21 +374,23 @@ class Show extends Component
         $contributingUserIds = $contributions->pluck('user_id')->unique();
         $totalContributorsCount = $contributingUserIds->count();
 
-        $totalSystemMembers = User::count();
+        $totalSystemMembers = User::excludeDevelopers()->count();
         $contributionPercentage = $totalSystemMembers > 0 
             ? round(($totalContributorsCount / $totalSystemMembers) * 100, 2) 
             : 0;
 
         $totalAmountCollected = $contributions->sum('amount');
 
-        $contributorsByGender = User::whereIn('id', $contributingUserIds)
+        $contributorsByGender = User::excludeDevelopers()
+            ->whereIn('id', $contributingUserIds)
             ->whereIn('gender', ['male', 'female'])
             ->selectRaw('gender, count(*) as count')
             ->groupBy('gender')
             ->pluck('count', 'gender')
             ->toArray();
 
-        $contributorsBySchoolLevel = User::whereIn('id', $contributingUserIds)
+        $contributorsBySchoolLevel = User::excludeDevelopers()
+            ->whereIn('id', $contributingUserIds)
             ->whereIn('school_level', ['Primary', 'Junior', 'Senior'])
             ->selectRaw('school_level, count(*) as count')
             ->groupBy('school_level')

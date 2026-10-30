@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin;
 
 use App\Models\Setting;
+use App\Models\User;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -13,7 +14,7 @@ class Settings extends Component
 {
     public $editingField = null;
     
-    // Values for individual updates
+    // Values for individual settings updates
     public $registration_fee;
     public $agm_contribution_fee;
     public $late_registration_waiting_period_days;
@@ -24,6 +25,11 @@ class Settings extends Component
     // Separated deadline properties
     public $registration_deadline_month;
     public $registration_deadline_day;
+
+    // Role Management Properties
+    public $searchMember = '';
+    public $selectedRoleType = 'welfare-admin'; // 'super-admin' or 'welfare-admin'
+    public $showRoleModal = false;
 
     public function edit($field)
     {
@@ -104,10 +110,113 @@ class Settings extends Component
         session()->flash('success', 'System settings updated successfully.');
     }
 
+    // --- Role Management Actions ---
+
+    public function openRoleModal($roleType)
+    {
+        $user = auth()->user();
+
+        // Allow both Developers and Super Admins to manage Super Admin roles
+        if ($roleType === 'super-admin' && !($user->isDeveloper() || $user->hasRole('super-admin'))) {
+            session()->flash('error', 'Only Super Admins or Developers can manage Super Admin roles.');
+            return;
+        }
+
+        $this->selectedRoleType = $roleType;
+        $this->searchMember = '';
+        $this->showRoleModal = true;
+    }
+
+    public function closeRoleModal()
+    {
+        $this->showRoleModal = false;
+        $this->searchMember = '';
+    }
+
+    public function assignRoleToUser($userId)
+    {
+        $authUser = auth()->user();
+        $targetUser = User::excludeDevelopers()->findOrFail($userId);
+
+        if ($targetUser->hasRole($this->selectedRoleType)) {
+            session()->flash('error', 'This user already possesses this role.');
+            return;
+        }
+
+        if ($this->selectedRoleType === 'super-admin' && !($authUser->isDeveloper() || $authUser->hasRole('super-admin'))) {
+            session()->flash('error', 'Unauthorized action.');
+            return;
+        }
+
+        if ($this->selectedRoleType === 'welfare-admin' && !($authUser->isDeveloper() || $authUser->hasRole('super-admin'))) {
+            session()->flash('error', 'Unauthorized action.');
+            return;
+        }
+
+        $targetUser->assignRole($this->selectedRoleType);
+
+        $roleLabel = ucwords(str_replace('-', ' ', $this->selectedRoleType));
+        $userName = trim("{$targetUser->first_name} {$targetUser->last_name}");
+
+        $this->closeRoleModal();
+        session()->flash('success', "Role '{$roleLabel}' successfully assigned to {$userName}.");
+    }
+
+    public function removeRoleFromUser($userId, $roleName)
+    {
+        $authUser = auth()->user();
+
+        // Prevent self-removal
+        if ((int)$userId === (int)$authUser->id) {
+            session()->flash('error', 'You cannot remove your own administrative privileges.');
+            return;
+        }
+
+        $targetUser = User::excludeDevelopers()->findOrFail($userId);
+
+        if ($roleName === 'super-admin' && !($authUser->isDeveloper() || $authUser->hasRole('super-admin'))) {
+            session()->flash('error', 'Only Super Admins or Developers can remove Super Admin roles.');
+            return;
+        }
+
+        $targetUser->removeRole($roleName);
+
+        $userName = trim("{$targetUser->first_name} {$targetUser->last_name}");
+        $roleLabel = ucwords(str_replace('-', ' ', $roleName));
+
+        session()->flash('success', "Role '{$roleLabel}' removed from {$userName} successfully.");
+    }
+
     public function render()
     {
+        $authUser = auth()->user();
+        
+        // Fetch non-developer users assigned to super-admin and welfare-admin roles
+        $superAdmins = User::excludeDevelopers()->role('super-admin')->get();
+        $welfareAdmins = User::excludeDevelopers()->role('welfare-admin')->get();
+
+        // Live search collection for role assignment modal (excluding developers)
+        $searchedMembers = collect();
+        if (strlen(trim($this->searchMember)) > 0) {
+            $searchedMembers = User::excludeDevelopers()
+                ->where(function ($q) {
+                    $q->where('first_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('last_name', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('membership_number', 'like', '%' . $this->searchMember . '%')
+                        ->orWhere('tsc_number', 'like', '%' . $this->searchMember . '%');
+                })
+                ->limit(5)
+                ->get();
+        }
+
         return view('livewire.admin.settings', [
-            'settings' => Setting::first()
+            'settings' => Setting::first(),
+            'superAdmins' => $superAdmins,
+            'welfareAdmins' => $welfareAdmins,
+            'searchedMembers' => $searchedMembers,
+            'isDeveloper' => $authUser->isDeveloper(),
+            'isSuperAdmin' => $authUser->hasRole('super-admin'),
+            'authUserId' => $authUser->id,
         ]);
     }
 }

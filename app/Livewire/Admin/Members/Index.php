@@ -23,7 +23,7 @@ class Index extends Component
 
     public function deleteMember($id)
     {
-        $user = User::findOrFail($id);
+        $user = User::excludeDevelopers()->findOrFail($id);
         
         if (auth()->id() === $user->id) {
             session()->flash('error', 'You cannot delete your own account.');
@@ -37,12 +37,12 @@ class Index extends Component
 
     public function render()
     {
-        $query = User::query();
+        $query = User::excludeDevelopers();
 
-        // If the current user is NOT a super admin, hide super admins from the directory list
-        if (!auth()->user()->hasRole('super admin')) {
+        // If the current user is NOT a super-admin, hide super-admins from the directory list
+        if (!auth()->user()->hasRole('super-admin')) {
             $query->whereDoesntHave('roles', function ($q) {
-                $q->where('name', 'super admin');
+                $q->where('name', 'super-admin');
             });
         }
 

@@ -42,7 +42,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'view transactions',
             'download reports', // Single unified permission for administrative downloads/reports
 
-            // System Settings (Technical / Super Admin level)
+            // System Settings (Super Admin level)
             'manage settings',
 
             // Portal & Member-specific Features
@@ -62,12 +62,12 @@ class RolesAndPermissionsSeeder extends Seeder
 
         // 2. Create Roles and Assign Permissions
 
-        // Super Admin: System developer with full technical access (all permissions)
-        $superAdminRole = Role::firstOrCreate(['name' => 'super admin']);
+        // Super Admin: Organizational head with highest administrative privileges
+        $superAdminRole = Role::firstOrCreate(['name' => 'super-admin']);
         $superAdminRole->givePermissionTo(Permission::all());
 
-        // Welfare Admin: Day-to-day manager who accesses all operational pages, reports, and records
-        $welfareAdminRole = Role::firstOrCreate(['name' => 'welfare admin']);
+        // Welfare Admin: Day-to-day manager who accesses operational pages, reports, and records
+        $welfareAdminRole = Role::firstOrCreate(['name' => 'welfare-admin']);
         $welfareAdminRole->givePermissionTo([
             'view dashboard',
             'view members',
@@ -83,14 +83,14 @@ class RolesAndPermissionsSeeder extends Seeder
             'show benevolence cases',
             'view transactions',
             'download reports',
-           
+            
             'access portal',
             'view membership status',
             'view solidarity fund',
             'download member reports',
         ]);
 
-      
+        // Member: Standard beneficiary role
         $memberRole = Role::firstOrCreate(['name' => 'member']);
         $memberRole->givePermissionTo([
             'access portal',

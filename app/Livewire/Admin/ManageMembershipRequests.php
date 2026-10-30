@@ -47,7 +47,13 @@ class ManageMembershipRequests extends Component
      */
     public function openApproveModal($id)
     {
-        $request = MembershipRequest::with('user')->findOrFail($id);
+        $request = MembershipRequest::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
+            ->findOrFail($id);
 
         if ($request->status === 'approved' && $request->user && $request->user->status === 'active') {
             session()->flash('message', 'This request is already fully processed.');
@@ -57,8 +63,8 @@ class ManageMembershipRequests extends Component
         $this->approvingRequestId = $id;
         $this->applicantName = trim(($request->user->first_name ?? '') . ' ' . ($request->user->last_name ?? ''));
 
-        // Calculate maximum existing membership number numerically
-        $lastMembershipNumber = User::max(DB::raw('CAST(membership_number AS UNSIGNED)'));
+        // Calculate maximum existing membership number numerically (excluding developers)
+        $lastMembershipNumber = User::excludeDevelopers()->max(DB::raw('CAST(membership_number AS UNSIGNED)'));
         $nextNumber = $lastMembershipNumber ? $lastMembershipNumber + 1 : 1;
 
         $this->membership_number = (string) $nextNumber;
@@ -80,10 +86,17 @@ class ManageMembershipRequests extends Component
             'membership_number' => 'required|string|max:50',
         ]);
 
-        $request = MembershipRequest::with('user')->findOrFail($this->approvingRequestId);
+        $request = MembershipRequest::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
+            ->findOrFail($this->approvingRequestId);
 
         // Check if membership number is already taken by another user
-        $existingUser = User::where('membership_number', $this->membership_number)
+        $existingUser = User::excludeDevelopers()
+            ->where('membership_number', $this->membership_number)
             ->when($request->user_id, function ($query) use ($request) {
                 $query->where('id', '!=', $request->user_id);
             })
@@ -92,7 +105,6 @@ class ManageMembershipRequests extends Component
         if ($existingUser && !$force) {
             $existingName = trim($existingUser->first_name . ' ' . $existingUser->last_name);
             
-            // Dispatch browser event to trigger SweetAlert
             $this->dispatch('swal:duplicate-membership', [
                 'number' => $this->membership_number,
                 'name' => $existingName,
@@ -144,7 +156,13 @@ class ManageMembershipRequests extends Component
 
     public function rejectRequest($id)
     {
-        $request = MembershipRequest::with('user')->findOrFail($id);
+        $request = MembershipRequest::whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
+            ->findOrFail($id);
 
         $request->update([
             'status' => 'rejected',
@@ -156,16 +174,25 @@ class ManageMembershipRequests extends Component
 
     public function render()
     {
-        $requests = MembershipRequest::query()
-            ->with('user')
+        // Exclude rejected requests and developer applications from the queue
+        $requests = MembershipRequest::where('status', '!=', 'rejected')
+            ->whereHas('user', function ($q) {
+                $q->excludeDevelopers();
+            })
+            ->with(['user' => function ($q) {
+                $q->excludeDevelopers();
+            }])
             ->when($this->search, function ($query) {
                 $term = '%' . $this->search . '%';
                 $query->whereHas('user', function ($q) use ($term) {
-                    $q->where('first_name', 'like', $term)
-                        ->orWhere('last_name', 'like', $term)
-                        ->orWhere('tsc_number', 'like', $term)
-                        ->orWhere('email', 'like', $term)
-                        ->orWhere('phone', 'like', $term);
+                    $q->excludeDevelopers()
+                        ->where(function ($sub) use ($term) {
+                            $sub->where('first_name', 'like', $term)
+                                ->orWhere('last_name', 'like', $term)
+                                ->orWhere('tsc_number', 'like', $term)
+                                ->orWhere('email', 'like', $term)
+                                ->orWhere('phone', 'like', $term);
+                        });
                 });
             })
             ->latest()

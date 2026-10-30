@@ -60,6 +60,18 @@ class User extends Authenticatable
         ];
     }
 
+    public function isDeveloper(): bool
+    {
+        $developers = array_map('trim', explode(',', env('APP_DEVELOPERS', '')));
+        return in_array($this->email, $developers);
+    }
+
+    public function scopeExcludeDevelopers($query)
+    {
+        $developers = array_map('trim', explode(',', env('APP_DEVELOPERS', '')));
+        return $query->whereNotIn('email', array_filter($developers));
+    }
+
     /** * User's Solidarity Fund wallet. */
     public function solidarityFund()
     {
